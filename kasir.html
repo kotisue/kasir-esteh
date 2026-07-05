@@ -161,7 +161,7 @@
     const FIREBASE_URL = "https://kasir-esteh-default-rtdb.asia-southeast1.firebasedatabase.app";
 
     const harga = { teh_besar: 4000, teh_kecil: 3000, jeruk_besar: 7000, jeruk_kecil: 5000 };
-    let logKeuangan = [];
+    let logKeuangan = []; // Akan diisi otomatis dari Firebase secara Live
 
     function changeQty(id, change) {
         const input = document.getElementById(id);
@@ -189,16 +189,14 @@
         return s.getFullYear() + "-" + (s.getMonth()+1).toString().padStart(2, '0') + "-" + s.getDate().toString().padStart(2, '0');
     }
 
+    // KIRIM DATA KE FIREBASE
     function kirimKeFirebase(data) {
         let tglKey = dapatkanTanggalKey();
         fetch(`${FIREBASE_URL}/transaksi/${tglKey}.json`, {
             method: 'POST',
             body: JSON.stringify(data)
-        })
-        .then(() => {
-            logKeuangan.unshift(data);
-            renderLaporanLive();
         });
+        // Tidak perlu render manual lagi di sini karena sudah dipantau otomatis oleh fungsi jalankanPantauLiveKasir() di bawah
     }
 
     function simpanPesanan() {
@@ -232,16 +230,43 @@
         document.getElementById('nominal_pengeluaran').value = '';
     }
 
-    function renderLaporanLive() {
-        let tabel = document.getElementById('tabel_riwayat'); tabel.innerHTML = '';
-        let totalP = 0, totalK = 0;
-        logKeuangan.forEach(data => {
-            if (data.tipe === 'pemasukan') totalP += data.jumlah; else totalK += data.jumlah;
-            tabel.insertAdjacentHTML('beforeend', `<tr><td>${data.waktu}</td><td>${data.keterangan}</td><td class="text-right ${data.tipe==='pemasukan'?'color-in':'color-out'}">${data.tipe==='pemasukan'?'+':'-'} Rp ${data.jumlah.toLocaleString('id-ID')}</td></tr>`);
-        });
-        document.getElementById('box_pendapatan').innerText = 'Rp ' + totalP.toLocaleString('id-ID');
-        document.getElementById('box_pengeluaran_live').innerText = 'Rp ' + totalK.toLocaleString('id-ID');
-        document.getElementById('box_laba_live').innerText = 'Rp ' + (totalP - totalK).toLocaleString('id-ID');
+    // BARU: Fungsi ini bikin HP Semua Pegawai otomatis narik data terbaru dari Firebase tiap 4 detik
+    function jalankanPantauLiveKasir() {
+        let tglKey = dapatkanTanggalKey();
+        let urlStream = `${FIREBASE_URL}/transaksi/${tglKey}.json`;
+        
+        function ambilData() {
+            fetch(urlStream)
+            .then(res => res.json())
+            .then(data => {
+                let tabel = document.getElementById('tabel_riwayat'); tabel.innerHTML = '';
+                let totalP = 0, totalK = 0;
+
+                if (!data) {
+                    tabel.innerHTML = '<tr><td colspan="3" style="text-align:center;">Belum ada transaksi hari ini.</td></tr>';
+                    document.getElementById('box_pendapatan').innerText = 'Rp 0';
+                    document.getElementById('box_pengeluaran_live').innerText = 'Rp 0';
+                    document.getElementById('box_laba_live').innerText = 'Rp 0';
+                    logKeuangan = [];
+                    return;
+                }
+
+                // Ubah data Firebase jadi Array dan balik biar yang terbaru di atas
+                logKeuangan = Object.values(data).reverse();
+
+                logKeuangan.forEach(item => {
+                    if (item.tipe === 'pemasukan') totalP += item.jumlah; else totalK += item.jumlah;
+                    tabel.insertAdjacentHTML('beforeend', `<tr><td>${item.waktu}</td><td>${item.keterangan}</td><td class="text-right ${item.tipe==='pemasukan'?'color-in':'color-out'}">${item.tipe==='pemasukan'?'+':'-'} Rp ${item.jumlah.toLocaleString('id-ID')}</td></tr>`);
+                });
+
+                document.getElementById('box_pendapatan').innerText = 'Rp ' + totalP.toLocaleString('id-ID');
+                document.getElementById('box_pengeluaran_live').innerText = 'Rp ' + totalK.toLocaleString('id-ID');
+                document.getElementById('box_laba_live').innerText = 'Rp ' + (totalP - totalK).toLocaleString('id-ID');
+            });
+        }
+
+        ambilData();
+        setInterval(ambilData, 4000); // Cek data baru setiap 4 detik sekali
     }
 
     function prosesClosingHariIni() {
@@ -264,6 +289,9 @@
     }
     function kembaliKeKasir() { document.getElementById('konten_aplikasi_kasir').style.display = 'flex'; document.getElementById('struk_closing').style.display = 'none'; }
     function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
+    
+    // Jalankan pantau live untuk kasir saat halaman dibuka
+    jalankanPantauLiveKasir();
 </script>
 </body>
 </html>

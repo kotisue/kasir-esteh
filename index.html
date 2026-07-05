@@ -3,209 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Kasir Es Teh & Jeruk</title>
+    <title>Login Sistem Kasir</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #1a202c; color: #fff; padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        .wrapper { width: 100%; max-width: 500px; background: #2d3748; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        h2, h3 { text-align: center; margin-bottom: 15px; color: #f1c40f; }
-        .menu-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; }
-        .menu-card { background: #1a202c; padding: 12px; border-radius: 10px; border: 1px solid #4a5568; }
-        .menu-card h4 { color: #f1c40f; margin-bottom: 8px; font-size: 14px; text-transform: uppercase; }
-        .btn-group { display: flex; gap: 6px; }
-        .btn-menu { flex: 1; padding: 10px; border: none; background: #3182ce; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 12px; }
-        .btn-menu:hover { background: #2b6cb0; }
-        .order-box { background: #1a202c; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
-        .order-item { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dashed #4a5568; }
-        .btn-del { background: #e53e3e; color: white; border: none; padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 11px; }
-        .total-harga { font-size: 18px; font-weight: bold; text-align: right; color: #2ecc71; margin-top: 10px; }
-        .form-inline { display: flex; gap: 8px; margin-top: 15px; }
-        .form-inline input { flex: 1; padding: 10px; border-radius: 6px; border: none; outline: none; font-size: 14px; }
-        .btn-action { padding: 10px 15px; border: none; background: #2ecc71; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; }
-        .chat-wrap { background: #1a202c; padding: 10px; border-radius: 10px; max-height: 120px; overflow-y: auto; font-size: 12px; margin-bottom: 10px; border: 1px solid #4a5568; }
-        .chat-line { margin-bottom: 4px; } .chat-line.admin { color: #f48fb1; } .chat-line.me { color: #5dade2; text-align: right; }
+        body { background-color: #f0f3f5; height: 100vh; display: flex; justify-content: center; align-items: center; padding: 12px; }
+        .login-container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); width: 100%; max-width: 360px; text-align: center; }
+        h2 { color: #2c3e50; margin-bottom: 20px; font-size: 22px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; text-align: left; }
+        .form-group label { font-size: 13px; font-weight: bold; color: #4a5568; }
+        .form-group input { padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 14px; outline: none; }
+        .btn-login { width: 100%; padding: 12px; background: #2c3e50; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .error-msg { color: #e74c3c; font-size: 13px; margin-top: 10px; display: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div style="width: 100%; max-width: 500px; text-align: right;">
-    <button onclick="logout()" style="padding: 5px 10px; background: #e53e3e; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">Logout</button>
-</div>
-
-<div class="wrapper">
-    <h2>🥤 POS KASIR PEGAWAI</h2>
-    <div style="background:#e67e22; padding:8px; border-radius:6px; text-align:center; font-size:12px; font-weight:bold; margin-bottom:15px;" id="status_modal">Mengecek Modal Awal...</div>
-
-    <div class="menu-grid">
-        <div class="menu-card">
-            <h4>🍃 ES TEH SOLO</h4>
-            <div class="btn-group">
-                <button class="btn-menu" onclick="tambahKeKeranjang('Es Teh Solo (Cup Kecil)')">Kecil (Rp 3rb)</button>
-                <button class="btn-menu" onclick="tambahKeKeranjang('Es Teh Solo (Cup Besar)')">Besar (Rp 4rb)</button>
-            </div>
-        </div>
-        <div class="menu-card">
-            <h4>🛍️ ES TEH KANTHUL</h4>
-            <button class="btn-menu" style="width:100%; background:#805ad5;" onclick="tambahKeKeranjang('Es Teh Kanthul (Plastik)')">Plastik Kanthul (Rp 3rb)</button>
-        </div>
-        <div class="menu-card">
-            <h4>🍊 ES JERUK</h4>
-            <button class="btn-menu" style="width:100%; background:#dd6b20;" onclick="tambahKeKeranjang('Jeruk Original (Cup Kecil)')">Jeruk Original (Rp 10.000)</button>
-        </div>
+<div class="login-container">
+    <h2>🔒 Login Kasir & Admin</h2>
+    <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="username" placeholder="Masukkan username">
     </div>
-
-    <h3>🛒 KERANJANG BELANJA</h3>
-    <div class="order-box">
-        <div id="list_keranjang"></div>
-        <div class="total-harga" id="total_belanja">Total: Rp 0</div>
-        <button class="btn-action" style="width:100%; margin-top:10px;" onclick="prosesSimpanTransaksi()">💸 SIMPAN TRANSAKSI</button>
+    <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Masukkan password">
     </div>
-
-    <div class="order-box" style="border: 1px solid #e53e3e;">
-        <h4 style="color:#e53e3e; font-size:13px; margin-bottom:5px;">⚠️ INPUT PENGELUARAN TOKO (BELI ES BATU/SEDOTAN/DLL)</h4>
-        <div class="form-inline" style="margin-top:0;">
-            <input type="text" id="out_ket" placeholder="Keterangan pengeluaran...">
-            <input type="number" id="out_jml" placeholder="Rp Nominal...">
-            <button class="btn-action" style="background:#e53e3e;" onclick="simpanPengeluaran()">Catat</button>
-        </div>
-    </div>
-
-    <div class="order-box" style="border: 1px solid #9b59b6;">
-        <h4 style="color:#9b59b6; font-size:13px; margin-bottom:5px;">💬 LIVE CHAT DENGAN OWNER</h4>
-        <div class="chat-wrap" id="box_chat_kasir"></div>
-        <div class="form-inline" style="margin-top:0;">
-            <input type="text" id="teks_chat_kasir" placeholder="Ketik pesan ke bos...">
-            <button class="btn-action" style="background:#9b59b6;" onclick="kirimChatKasir()">Kirim</button>
-        </div>
-        <button class="btn-action" style="background:#e67e22; width:100%; margin-top:5px; font-size:13px;" onclick="laporanClosingToko()">📢 KIRIM LAPORAN CLOSING TOKO</button>
-    </div>
+    <button class="btn-login" onclick="cekLogin()">Masuk Aplikasi</button>
+    <div class="error-msg" id="pesan_error">Username atau Password Salah!</div>
 </div>
 
 <script>
-    if (sessionStorage.getItem('role') !== 'pegawai') { window.location.href = "index.html"; }
+    function cekLogin() {
+        let userIn = document.getElementById('username').value.trim();
+        let passIn = document.getElementById('password').value;
+        let errorBox = document.getElementById('pesan_error');
 
-    const FIREBASE_URL = "https://kasir-esteh-default-rtdb.asia-southeast1.firebasedatabase.app";
-    
-    // DAFTAR HARGA FIX TERBARU
-    const DAFTAR_PRODUK = {
-        "Es Teh Solo (Cup Kecil)": 3000,
-        "Es Teh Solo (Cup Besar)": 4000,
-        "Es Teh Kanthul (Plastik)": 3000,
-        "Jeruk Original (Cup Kecil)": 10000
-    };
+        // Sembunyikan pesan error dulu setiap kali tombol ditekan
+        errorBox.style.display = 'none';
 
-    let keranjang = {};
-
-    function dapatkanTanggalHariIni() {
-        let s = new Date();
-        return s.getFullYear() + "-" + (s.getMonth()+1).toString().padStart(2, '0') + "-" + s.getDate().toString().padStart(2, '0');
-    }
-
-    function tambahKeKeranjang(namaProduk) {
-        if (keranjang[namaProduk]) { keranjang[namaProduk]++; } else { keranjang[namaProduk] = 1; }
-        renderKeranjang();
-    }
-
-    function kurangdariKeranjang(namaProduk) {
-        if (keranjang[namaProduk]) {
-            keranjang[namaProduk]--;
-            if (keranjang[namaProduk] <= 0) delete keranjang[namaProduk];
+        if (userIn === "kasir" && passIn === "esteh123") {
+            sessionStorage.setItem('role', 'kasir');
+            window.location.href = "kasir.html";
+        } else if (userIn === "admin" && passIn === "admin123") {
+            sessionStorage.setItem('role', 'admin');
+            window.location.href = "admin.html";
+        } else {
+            errorBox.style.display = 'block';
         }
-        renderKeranjang();
     }
-
-    function renderKeranjang() {
-        let box = document.getElementById('list_keranjang'); box.innerHTML = '';
-        let total = 0;
-        Object.entries(keranjang).forEach(([nama, qty]) => {
-            let sub = DAFTAR_PRODUK[nama] * qty;
-            total += sub;
-            box.insertAdjacentHTML('beforeend', `
-                <div class="order-item">
-                    <span>${nama} (x${qty})</span>
-                    <span>Rp ${sub.toLocaleString('id-ID')} <button class="btn-del" onclick="kurangdariKeranjang('${nama}')">❌</button></span>
-                </div>
-            `);
-        });
-        document.getElementById('total_belanja').innerText = "Total: Rp " + total.toLocaleString('id-ID');
-    }
-
-    function prosesSimpanTransaksi() {
-        if (Object.keys(keranjang).length === 0) return alert("Keranjang masih kosong!");
-        let tgl = dapatkanTanggalHariIni();
-        let s = new Date();
-        let jam = s.getHours().toString().padStart(2, '0') + ':' + s.getMinutes().toString().padStart(2, '0');
-
-        Object.entries(keranjang).forEach(([nama, qty]) => {
-            let subTotal = DAFTAR_PRODUK[nama] * qty;
-            let payload = { waktu: jam, tipe: 'pemasukan', keterangan: `${nama} x${qty}`, jumlah: subTotal };
-            fetch(`${FIREBASE_URL}/transaksi/${tgl}.json`, { method: 'POST', body: JSON.stringify(payload) });
-        });
-
-        alert("Transaksi berhasil disimpan!");
-        keranjang = {}; renderKeranjang();
-    }
-
-    function simpanPengeluaran() {
-        let ket = document.getElementById('out_ket').value.trim();
-        let jml = parseInt(document.getElementById('out_充実').value) || 0; // fallback id typo fix manual if any
-        if(!jml) jml = parseInt(document.getElementById('out_jml').value) || 0;
-        if (ket === "" || jml <= 0) return alert("Isi data pengeluaran dengan benar!");
-
-        let tgl = dapatkanTanggalHariIni();
-        let s = new Date();
-        let jam = s.getHours().toString().padStart(2, '0') + ':' + s.getMinutes().toString().padStart(2, '0');
-        let payload = { waktu: jam, tipe: 'pengeluaran', keterangan: `[Pengeluaran] ${ket}`, jumlah: jml };
-
-        fetch(`${FIREBASE_URL}/transaksi/${tgl}.json`, { method: 'POST', body: JSON.stringify(payload) })
-        .then(() => { alert("Pengeluaran berhasil dicatat!"); document.getElementById('out_ket').value=''; document.getElementById('out_jml').value=''; });
-    }
-
-    function kirimChatKasir() {
-        let msg = document.getElementById('teks_chat_kasir').value.trim();
-        if (msg === "") return;
-        let tgl = dapatkanTanggalHariIni();
-        let s = new Date();
-        let jam = s.getHours().toString().padStart(2, '0') + ':' + s.getMinutes().toString().padStart(2, '0');
-        fetch(`${FIREBASE_URL}/chat/${tgl}.json`, {
-            method: 'POST',
-            body: JSON.stringify({ pengirim: 'pegawai', waktu: jam, teks: msg })
-        }).then(() => { document.getElementById('teks_chat_kasir').value = ''; });
-    }
-
-    function laporanClosingToko() {
-        let catatan = prompt("Masukkan catatan akhir closing malam ini (Contoh: Sisa cup 5, Es batu habis):");
-        if (catatan === null) return;
-        let tgl = dapatkanTanggalHariIni();
-        let s = new Date();
-        let jam = s.getHours().toString().padStart(2, '0') + ':' + s.getMinutes().toString().padStart(2, '0');
-        fetch(`${FIREBASE_URL}/closing/${tgl}.json`, {
-            method: 'PUT',
-            body: JSON.stringify({ waktu: jam, catatan: catatan })
-        }).then(() => { alert("Laporan closing terkirim ke Owner. Pegawai dipersilakan pulang!"); });
-    }
-
-    setInterval(() => {
-        let tgl = dapatkanTanggalHariIni();
-        // Cek Modal Owner
-        fetch(`${FIREBASE_URL}/modal/${tgl}.json`).then(res => res.json()).then(m => {
-            let b = document.getElementById('status_modal');
-            if(m) { b.innerText = `🟢 MODAL TOKO HARI INI: Rp ${m.toLocaleString('id-ID')}`; b.style.background = '#27ae60'; }
-            else { b.innerText = `🔴 MENUNGGU INPUT MODAL DARI OWNER`; b.style.background = '#e67e22'; }
-        });
-        // Realtime Chat Loop
-        fetch(`${FIREBASE_URL}/chat/${tgl}.json`).then(res => res.json()).then(data => {
-            let box = document.getElementById('box_chat_kasir'); box.innerHTML = '';
-            if(data) {
-                Object.values(data).forEach(c => {
-                    box.insertAdjacentHTML('beforeend', `<div class="chat-line ${c.pengirim==='admin'?'admin':'me'}"><b>${c.pengirim==='admin'?'Owner':'Anda'}:</b> ${c.teks}</div>`);
-                });
-                box.scrollTop = box.scrollHeight;
-            }
-        });
-    }, 4000);
-
-    function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
 </script>
 </body>
 </html>

@@ -16,7 +16,7 @@
         .val { display: block; font-size: 20px; margin-top: 5px; color: #fff; }
         .laba .val { color: #f1c40f; font-size: 26px; }
         .form-inline { display: flex; gap: 8px; margin-bottom: 15px; }
-        .form-inline input { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px; outline: none; }
+        .form-inline input, .form-inline select { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px; outline: none; }
         .btn-action { padding: 10px 15px; border: none; background: #f1c40f; color: #1a202c; font-weight: bold; border-radius: 8px; cursor: pointer; }
         .table-wrap { background: #1a202c; border-radius: 8px; padding: 10px; max-height: 300px; overflow-y: auto; border: 1px solid #4a5568; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
@@ -28,6 +28,8 @@
         .chat-area { max-height: 150px; overflow-y: auto; background: #1a202c; border: 1px solid #4a5568; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
         .chat-line { margin-bottom: 6px; } .chat-line.pegawai { color: #5dade2; } .chat-line.me { color: #f48fb1; text-align: right; }
         .closing-box { background: #e67e22; padding: 12px; border-radius: 8px; color: white; margin-bottom: 15px; font-size: 13px; font-weight: bold; border-left: 5px solid #d35400; }
+        .filter-box { background: #1a202c; border: 1px dashed #f1c40f; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
+        .label-filter { font-size: 12px; font-weight: bold; color: #cbd5e0; margin-bottom: 5px; display: block; }
     </style>
 </head>
 <body>
@@ -37,25 +39,33 @@
 </div>
 
 <div class="admin-box" style="margin-bottom: -5px;">
-    <h3 style="font-size:14px; margin-bottom:10px; color:#f1c40f;">💰 INPUT MODAL AWAL TOKO</h3>
+    <h3 style="font-size:14px; margin-bottom:10px; color:#f1c40f;">💰 INPUT MODAL AWAL TOKO (HARI INI)</h3>
     <div class="form-inline">
-        <input type="number" id="input_modal_nominal" placeholder="Masukkan Modal Hari Ini (Rp)...">
+        <input type="number" id="input_modal_nominal" placeholder="Masukkan Uang Modal Toko (Rp)...">
         <button class="btn-action" onclick="setUangModal()">Kirim Modal</button>
     </div>
     <div id="notif_closing_box" style="display:none;" class="closing-box">📢 LAPORAN CLOSING MASUK!<br><span id="notif_closing_text" style="font-weight:normal; font-style:italic;">-</span></div>
 </div>
 
 <div class="wrapper">
-    <h2>🎯 MONITORING LIVE TOKO (OWNER)</h2>
-    <div style="text-align: center; margin-bottom: 15px; font-size: 14px; color: #cbd5e0;" id="tgl_skrg">Tanggal: -</div>
-
-    <div class="grid">
-        <div class="box in">🟢 LIVE OMSET MASUK<span class="val" id="adm_masuk">Rp 0</span></div>
-        <div class="box out">🔴 LIVE PENGELUARAN<span class="val" id="adm_keluar">Rp 0</span></div>
-        <div class="box laba">💰 LABA BERSIH REAL-TIME<span class="val" id="adm_laba">Rp 0</span></div>
+    <h2>🎯 MONITORING DASHBOARD OWNER</h2>
+    
+    <div class="filter-box">
+        <span class="label-filter">📅 LIHAT DATA TANGGAL:</span>
+        <div class="form-inline" style="margin-bottom: 0;">
+            <input type="date" id="pilih_tanggal_admin" onchange="gantiTanggalLaporan()">
+        </div>
     </div>
 
-    <h3 style="font-size: 14px; margin-bottom: 8px; color: #f1c40f;">📋 Alur Transaksi (Klik Edit jika salah pencet):</h3>
+    <div style="text-align: center; margin-bottom: 15px; font-size: 14px; color: #cbd5e0; font-weight: bold;" id="tgl_skrg">Menampilkan Tanggal: -</div>
+
+    <div class="grid">
+        <div class="box in">🟢 OMSET MASUK<span class="val" id="adm_masuk">Rp 0</span></div>
+        <div class="box out">🔴 PENGELUARAN<span class="val" id="adm_keluar">Rp 0</span></div>
+        <div class="box laba">💰 LABA BERSIH <span class="val" id="adm_laba">Rp 0</span></div>
+    </div>
+
+    <h3 style="font-size: 14px; margin-bottom: 8px; color: #f1c40f;">📋 Alur Transaksi Pada Tanggal Ini:</h3>
     <div class="table-wrap" style="margin-bottom: 20px;">
         <table>
             <thead><tr><th>Jam</th><th>Keterangan</th><th class="text-right">Jumlah</th><th style="text-align:center">Aksi</th></tr></thead>
@@ -75,22 +85,40 @@
     if (sessionStorage.getItem('role') !== 'admin') { window.location.href = "index.html"; }
 
     const FIREBASE_URL = "https://kasir-esteh-default-rtdb.asia-southeast1.firebasedatabase.app";
-    let tanggalAktifAdmin = dapatkanTanggalKey();
+    
+    // Inisialisasi awal default ke tanggal hari ini
+    let tanggalAktifAdmin = dapatkanTanggalHariIni();
 
-    function dapatkanTanggalKey() {
+    function dapatkanTanggalHariIni() {
         let s = new Date();
         return s.getFullYear() + "-" + (s.getMonth()+1).toString().padStart(2, '0') + "-" + s.getDate().toString().padStart(2, '0');
     }
 
-    function renderTeksTanggal() {
-        document.getElementById('tgl_skrg').innerText = "Hari Ini: " + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    // Pasang tanggal hari ini di input kalender saat pertama dibuka
+    document.getElementById('pilih_tanggal_admin').value = tanggalAktifAdmin;
+
+    function renderTeksTanggal(tglKey) {
+        let parts = tglKey.split('-');
+        let d = new Date(parts[0], parts[1] - 1, parts[2]);
+        document.getElementById('tgl_skrg').innerText = "Menampilkan Laporan: " + d.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     }
-    renderTeksTanggal();
+    renderTeksTanggal(tanggalAktifAdmin);
+
+    // Fungsi jika owner mengubah tanggal di kalender
+    function gantiTanggalLaporan() {
+        let tglPilihan = document.getElementById('pilih_tanggal_admin').value;
+        if(tglPilihan) {
+            tanggalAktifAdmin = tglPilihan;
+            renderTeksTanggal(tanggalAktifAdmin);
+        }
+    }
 
     function setUangModal() {
         let nominal = parseInt(document.getElementById('input_modal_nominal').value) || 0;
         if (nominal <= 0) return alert("Masukkan angka nominal!");
-        fetch(`${FIREBASE_URL}/modal/${tanggalAktifAdmin}.json`, { method: 'PUT', body: JSON.stringify(nominal) })
+        // Selalu kirim modal ke tanggal hari ini (bukan tanggal arsip lama)
+        let tglHariIni = dapatkanTanggalHariIni();
+        fetch(`${FIREBASE_URL}/modal/${tglHariIni}.json`, { method: 'PUT', body: JSON.stringify(nominal) })
         .then(() => { alert("Uang Modal Berhasil Dikirim ke Kasir!"); document.getElementById('input_modal_nominal').value = ''; });
     }
 
@@ -118,18 +146,22 @@
 
     function jalankanPantauLiveAdmin() {
         setInterval(() => {
-            // FITUR AUTO-RESET DASHBOARD JIKA GANTI HARI
-            if (tanggalAktifAdmin !== dapatkanTanggalKey()) {
-                tanggalAktifAdmin = dapatkanTanggalKey();
-                renderTeksTanggal();
+            // Jika owner tidak sedang melihat arsip lama, sistem mendeteksi auto ganti hari otomatis
+            let tglHariIni = dapatkanTanggalHariIni();
+            let inputKalender = document.getElementById('pilih_tanggal_admin').value;
+            
+            // Mengikuti apa yang sedang dipilih atau auto ganti hari jika kalender pas di hari ini
+            if (tanggalAktifAdmin !== inputKalender) {
+                tanggalAktifAdmin = inputKalender;
+                renderTeksTanggal(tanggalAktifAdmin);
             }
 
-            // 1. Ambil Data Keuangan
+            // 1. Ambil Data Keuangan Berdasarkan Tanggal Aktif
             fetch(`${FIREBASE_URL}/transaksi/${tanggalAktifAdmin}.json`).then(res => res.json()).then(data => {
                 let tabel = document.getElementById('adm_tabel'); tabel.innerHTML = '';
                 let totalP = 0, totalK = 0;
                 if (!data) {
-                    tabel.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada penjualan hari ini.</td></tr>';
+                    tabel.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">Tidak ada riwayat transaksi pada tanggal ini.</td></tr>';
                     updateDashboard(0, 0); return;
                 }
                 Object.entries(data).reverse().forEach(([id, item]) => {
@@ -146,7 +178,7 @@
                 updateDashboard(totalP, totalK);
             });
 
-            // 2. Ambil Laporan Closing
+            // 2. Ambil Laporan Closing Berdasarkan Tanggal Aktif
             fetch(`${FIREBASE_URL}/closing/${tanggalAktifAdmin}.json`).then(res => res.json()).then(data => {
                 let boxNotif = document.getElementById('notif_closing_box');
                 if (data) {
@@ -155,7 +187,7 @@
                 } else { boxNotif.style.display = 'none'; }
             });
 
-            // 3. Ambil Chat Live
+            // 3. Ambil Chat Live Berdasarkan Tanggal Aktif
             fetch(`${FIREBASE_URL}/chat/${tanggalAktifAdmin}.json`).then(res => res.json()).then(data => {
                 let box = document.getElementById('admin_chat_box'); box.innerHTML = '';
                 if(data) {
@@ -163,7 +195,7 @@
                         box.insertAdjacentHTML('beforeend', `<div class="chat-line ${c.pengirim==='pegawai'?'pegawai':'me'}"><b>${c.pengirim==='pegawai'?'Pegawai':'Anda'} [${c.waktu}]:</b> ${c.teks}</div>`);
                     });
                     box.scrollTop = box.scrollHeight;
-                } else { box.innerHTML = '<center style="color:#777; font-size:12px;">Tidak ada obrolan hari ini.</center>'; }
+                } else { box.innerHTML = '<center style="color:#777; font-size:12px;">Tidak ada obrolan.</center>'; }
             });
         }, 3000);
     }

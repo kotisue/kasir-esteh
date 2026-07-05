@@ -110,13 +110,14 @@
         <div class="menu-section">
             <div class="menu-title">Es Jeruk Original</div>
             <div class="item-row jeruk-ori">
-                <div><div class="item-name">Cup Kecil</div><div class="item-price">Rp 10.000</div></div>
+                <div><div class="item-name">Jeruk Original</div><div class="item-price">Rp 10.000</div></div>
                 <div class="quantity-control">
                     <button class="btn-qty" onclick="changeQty('jeruk_ori_kecil', -1)">-</button>
                     <input type="number" id="jeruk_ori_kecil" class="qty-input" value="0" min="0" readonly>
                     <button class="btn-qty" onclick="changeQty('jeruk_ori_kecil', 1)">+</button>
                 </div>
             </div>
+        </div>
 
         <div class="total-section">
             <div>Total Transaksi</div>
@@ -180,8 +181,7 @@
     <div class="struk-row"><span>Es Teh Kecil:</span><span id="st_teh_k">0 Cup</span></div>
     <div class="struk-row"><span>Es Jeruk Besar:</span><span id="st_jeruk_b">0 Cup</span></div>
     <div class="struk-row"><span>Es Jeruk Kecil:</span><span id="st_jeruk_k">0 Cup</span></div>
-    <div class="struk-row"><span>Jeruk Ori Besar:</span><span id="st_jori_b">0 Cup</span></div>
-    <div class="struk-row"><span>Jeruk Ori Kecil:</span><span id="st_jori_k">0 Cup</span></div>
+    <div class="struk-row"><span>Jeruk Original:</span><span id="st_jori_k">0 Cup</span></div>
     <div class="struk-divider"></div>
     <div style="font-weight: bold; margin-bottom: 5px;">[💰 RINGKASAN KEUANGAN]</div>
     <div class="struk-row"><span>(+) TOTAL OMSET:</span><span id="st_omset">Rp 0</span></div>
@@ -200,10 +200,11 @@
 
     const FIREBASE_URL = "https://kasir-esteh-default-rtdb.asia-southeast1.firebasedatabase.app";
 
-    const harga = { teh_besar: 4000, teh_kecil: 3000, jeruk_besar: 7000, jeruk_kecil: 5000, jeruk_ori_besar: 6000, jeruk_ori_kecil: 4000 };
+    // Update Variabel Harga & Hapus item jeruk_ori_besar
+    const harga = { teh_besar: 4000, teh_kecil: 3000, jeruk_besar: 7000, jeruk_kecil: 5000, jeruk_ori_kecil: 10000 };
     let logKeuangan = [];
     let modalHariIni = 0;
-    let tanggalAktif = dapatkanTanggalKey(); // Mengunci tanggal saat aplikasi dibuka
+    let tanggalAktif = dapatkanTanggalKey();
 
     function changeQty(id, change) {
         const input = document.getElementById(id);
@@ -232,7 +233,6 @@
     }
 
     function kirimKeFirebase(data) {
-        // Memastikan input masuk ke tanggal yang sedang berjalan di sistem kasir
         fetch(`${FIREBASE_URL}/transaksi/${tanggalAktif}.json`, {
             method: 'POST',
             body: JSON.stringify(data)
@@ -247,19 +247,17 @@
         let qTK = parseInt(document.getElementById('teh_kecil').value) || 0;
         let qJB = parseInt(document.getElementById('jeruk_besar').value) || 0;
         let qJK = parseInt(document.getElementById('jeruk_kecil').value) || 0;
-        let qJOB = parseInt(document.getElementById('jeruk_ori_besar').value) || 0;
         let qJOK = parseInt(document.getElementById('jeruk_ori_kecil').value) || 0;
 
         if (qTB > 0) d.push(qTB + ' Teh(B)');
         if (qTK > 0) d.push(qTK + ' Teh(K)');
         if (qJB > 0) d.push(qJB + ' Jeruk(B)');
         if (qJK > 0) d.push(qJK + ' Jeruk(K)');
-        if (qJOB > 0) d.push(qJOB + ' J.Ori(B)');
-        if (qJOK > 0) d.push(qJOK + ' J.Ori(K)');
+        if (qJOK > 0) d.push(qJOK + ' Jeruk Original');
 
         kirimKeFirebase({
             waktu: dapatkanWaktu(), tipe: 'pemasukan', keterangan: d.join(', '), jumlah: total,
-            qty_detail: { teh_besar: qTB, teh_kecil: qTK, jeruk_besar: qJB, jeruk_kecil: qJK, jeruk_ori_besar: qJOB, jeruk_ori_kecil: qJOK }
+            qty_detail: { teh_besar: qTB, teh_kecil: qTK, jeruk_besar: qJB, jeruk_kecil: qJK, jeruk_ori_kecil: qJOK }
         });
         resetKalkulator();
     }
@@ -269,7 +267,8 @@
         let nom = parseInt(document.getElementById('nominal_pengeluaran').value) || 0;
         if (nama === "" || nom <= 0) return alert("Isi dengan benar!");
 
-        kirimKeFirebase({ waktu: dapatkanWaktu(), tipe: 'pengeluaran', keterangan: nama, jumlah: nom });
+        grid_out = { waktu: dapatkanWaktu(), tipe: 'pengeluaran', keterangan: nama, jumlah: nom };
+        kirimKeFirebase(grid_out);
         document.getElementById('nama_pengeluaran').value = '';
         document.getElementById('nominal_pengeluaran').value = '';
     }
@@ -285,7 +284,6 @@
 
     function jalankanPantauLiveKasir() {
         setInterval(() => {
-            // FITUR AUTO-RESET JIKA GANTI HARI
             if (tanggalAktif !== dapatkanTanggalKey()) {
                 tanggalAktif = dapatkanTanggalKey();
                 resetKalkulator();
@@ -333,14 +331,14 @@
     }
 
     function prosesClosingHariIni() {
-        let totalP = 0, totalK = 0, tTB = 0, tTK = 0, tJB = 0, tJK = 0, tJOB = 0, tJOK = 0;
+        let totalP = 0, totalK = 0, tTB = 0, tTK = 0, tJB = 0, tJK = 0, tJOK = 0;
         logKeuangan.forEach(data => {
             if (data.tipe === 'pemasukan') {
                 totalP += data.jumlah;
                 if(data.qty_detail) { 
                     tTB+=(data.qty_detail.teh_besar || 0); tTK+=(data.qty_detail.teh_kecil || 0); 
                     tJB+=(data.qty_detail.jeruk_besar || 0); tJK+=(data.qty_detail.jeruk_kecil || 0); 
-                    tJOB+=(data.qty_detail.jeruk_ori_besar || 0); tJOK+=(data.qty_detail.jeruk_ori_kecil || 0); 
+                    tJOK+=(data.qty_detail.jeruk_ori_kecil || 0); 
                 }
             } else { totalK += data.jumlah; }
         });
@@ -348,7 +346,6 @@
         document.getElementById('st_teh_k').innerText = tTK + " Cup";
         document.getElementById('st_jeruk_b').innerText = tJB + " Cup";
         document.getElementById('st_jeruk_k').innerText = tJK + " Cup";
-        document.getElementById('st_jori_b').innerText = tJOB + " Cup";
         document.getElementById('st_jori_k').innerText = tJOK + " Cup";
         document.getElementById('st_omset').innerText = 'Rp ' + totalP.toLocaleString('id-ID');
         document.getElementById('st_keluar').innerText = 'Rp ' + totalK.toLocaleString('id-ID');
@@ -357,6 +354,7 @@
         let txtCatatan = document.getElementById('catatan_closing').value.trim() || "Tidak ada catatan.";
         document.getElementById('st_catatan_text').innerText = txtCatatan;
 
+        document.getElementById('struk_tanggal').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         document.getElementById('konten_aplikasi_kasir').style.display = 'none';
         document.getElementById('struk_closing').style.display = 'block';
     }
@@ -364,7 +362,7 @@
     function kirimClosingKeAdmin() {
         let isiCatatan = document.getElementById('st_catatan_text').innerText;
         fetch(`${FIREBASE_URL}/closing/${tanggalAktif}.json`, {
-            method: 'SET',
+            method: 'PUT', // Diperbaiki dari 'SET' menjadi 'PUT' agar data terkirim dengan valid ke Firebase
             body: JSON.stringify({ waktu: dapatkanWaktu(), catatan: isiCatatan, status: 'Sudah Closing' })
         }).then(() => {
             alert("Laporan Berhasil Dikirim ke Bos!");

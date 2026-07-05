@@ -7,7 +7,7 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #1a202c; color: #fff; padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        .wrapper { width: 100%; max-width: 600px; background: #2d3748; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .wrapper, .admin-box { width: 100%; max-width: 600px; background: #2d3748; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         h2 { text-align: center; margin-bottom: 15px; color: #f1c40f; border-bottom: 2px solid #f1c40f; padding-bottom: 5px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .box { padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 14px; }
@@ -15,18 +15,34 @@
         .laba { grid-column: span 2; background: #2980b9; font-size: 18px; }
         .val { display: block; font-size: 20px; margin-top: 5px; color: #fff; }
         .laba .val { color: #f1c40f; font-size: 26px; }
-        .table-wrap { background: #1a202c; border-radius: 8px; padding: 10px; max-height: 350px; overflow-y: auto; border: 1px solid #4a5568; }
+        .form-inline { display: flex; gap: 8px; margin-bottom: 15px; }
+        .form-inline input { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px; outline: none; }
+        .btn-action { padding: 10px 15px; border: none; background: #f1c40f; color: #1a202c; font-weight: bold; border-radius: 8px; cursor: pointer; }
+        .table-wrap { background: #1a202c; border-radius: 8px; padding: 10px; max-height: 300px; overflow-y: auto; border: 1px solid #4a5568; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
         th, td { padding: 10px; border-bottom: 1px solid #4a5568; }
         th { background: #4a5568; color: #f1c40f; position: sticky; top: 0; }
         .text-right { text-align: right; }
         .c-in { color: #2ecc71; font-weight: bold; } .c-out { color: #e74c3c; font-weight: bold; }
+        .btn-edit { background: #3498db; color: white; padding: 3px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        .chat-area { max-height: 150px; overflow-y: auto; background: #1a202c; border: 1px solid #4a5568; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+        .chat-line { margin-bottom: 6px; } .chat-line.pegawai { color: #5dade2; } .chat-line.me { color: #f48fb1; text-align: right; }
+        .closing-box { background: #e67e22; padding: 12px; border-radius: 8px; color: white; margin-bottom: 15px; font-size: 13px; font-weight: bold; border-left: 5px solid #d35400; }
     </style>
 </head>
 <body>
 
 <div style="width: 100%; max-width: 600px; text-align: right;">
     <button onclick="logout()" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+</div>
+
+<div class="admin-box" style="margin-bottom: -5px;">
+    <h3 style="font-size:14px; margin-bottom:10px; color:#f1c40f;">💰 INPUT MODAL AWAL TOKO</h3>
+    <div class="form-inline">
+        <input type="number" id="input_modal_nominal" placeholder="Masukkan Modal Hari Ini (Rp)...">
+        <button class="btn-action" onclick="setUangModal()">Kirim Modal</button>
+    </div>
+    <div id="notif_closing_box" style="display:none;" class="closing-box">📢 LAPORAN CLOSING MASUK!<br><span id="notif_closing_text" style="font-weight:normal; font-style:italic;">-</span></div>
 </div>
 
 <div class="wrapper">
@@ -39,12 +55,19 @@
         <div class="box laba">💰 LABA BERSIH REAL-TIME<span class="val" id="adm_laba">Rp 0</span></div>
     </div>
 
-    <h3 style="font-size: 14px; margin-bottom: 8px; color: #f1c40f;">📋 Alur Transaksi Pegawai (Terbaru di Atas):</h3>
-    <div class="table-wrap">
+    <h3 style="font-size: 14px; margin-bottom: 8px; color: #f1c40f;">📋 Alur Transaksi (Klik Edit jika salah pencet):</h3>
+    <div class="table-wrap" style="margin-bottom: 20px;">
         <table>
-            <thead><tr><th>Jam</th><th>Keterangan</th><th class="text-right">Jumlah</th></tr></thead>
+            <thead><tr><th>Jam</th><th>Keterangan</th><th class="text-right">Jumlah</th><th style="text-align:center">Aksi</th></tr></thead>
             <tbody id="adm_tabel"></tbody>
         </table>
+    </div>
+
+    <h3 style="font-size: 14px; margin-bottom: 8px; color: #9b59b6;">💬 KOTAK OBROLAN DENGAN PEGAWAI:</h3>
+    <div class="chat-area" id="admin_chat_box"></div>
+    <div class="form-inline">
+        <input type="text" id="admin_pesan_teks" placeholder="Balas instruksi ke pegawai...">
+        <button class="btn-action" style="background:#9b59b6; color:white;" onclick="kirimChatAdmin()">Balas</button>
     </div>
 </div>
 
@@ -60,36 +83,84 @@
 
     document.getElementById('tgl_skrg').innerText = "Hari Ini: " + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-    function jalankanPantauLive() {
+    function setUangModal() {
+        let nominal = parseInt(document.getElementById('input_modal_nominal').value) || 0;
+        if (nominal <= 0) return alert("Masukkan angka nominal!");
         let tglKey = dapatkanTanggalKey();
-        let urlStream = `${FIREBASE_URL}/transaksi/${tglKey}.json`;
+        fetch(`${FIREBASE_URL}/modal/${tglKey}.json`, { method: 'PUT', body: JSON.stringify(nominal) })
+        .then(() => { alert("Uang Modal Berhasil Dikirim ke Kasir!"); document.getElementById('input_modal_nominal').value = ''; });
+    }
+
+    function editTransaksi(idTransaksi, ketLama, jmlLama) {
+        let ketBaru = prompt("Edit Keterangan Penjualan:", ketLama);
+        let jmlBaru = prompt("Edit Total Rupiah:", jmlLama);
+        if (ketBaru === null || jmlBaru === null) return;
         
-        function ambilData() {
-            fetch(urlStream)
-            .then(res => res.json())
-            .then(data => {
+        let tglKey = dapatkanTanggalKey();
+        fetch(`${FIREBASE_URL}/transaksi/${tglKey}/${idTransaksi}.json`, {
+            method: 'PATCH',
+            body: JSON.stringify({ keterangan: ketBaru, jumlah: parseInt(jmlBaru) || 0 })
+        }).then(() => { alert("Transaksi Berhasil Diperbaiki Bos!"); });
+    }
+
+    function kirimChatAdmin() {
+        let msg = document.getElementById('admin_pesan_teks').value.trim();
+        if (msg === "") return;
+        let s = new Date();
+        let jam = s.getHours().toString().padStart(2, '0') + ':' + s.getMinutes().toString().padStart(2, '0');
+        let tglKey = dapatkanTanggalKey();
+        fetch(`${FIREBASE_URL}/chat/${tglKey}.json`, {
+            method: 'POST',
+            body: JSON.stringify({ pengirim: 'admin', waktu: jam, teks: msg })
+        }).then(() => { document.getElementById('admin_pesan_teks').value = ''; });
+    }
+
+    function jalankanPantauLiveAdmin() {
+        let tglKey = dapatkanTanggalKey();
+
+        setInterval(() => {
+            // 1. Ambil Data Keuangan & Pasang Tombol Edit
+            fetch(`${FIREBASE_URL}/transaksi/${tglKey}.json`).then(res => res.json()).then(data => {
                 let tabel = document.getElementById('adm_tabel'); tabel.innerHTML = '';
                 let totalP = 0, totalK = 0;
-
                 if (!data) {
-                    tabel.innerHTML = '<tr><td colspan="3" style="text-align:center;">Belum ada penjualan hari ini.</td></tr>';
-                    updateDashboard(0, 0);
-                    return;
+                    tabel.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada penjualan hari ini.</td></tr>';
+                    updateDashboard(0, 0); return;
                 }
-
-                let listTransaksi = Object.values(data).reverse();
-
-                listTransaksi.forEach(item => {
+                Object.entries(data).reverse().forEach(([id, item]) => {
                     if (item.tipe === 'pemasukan') totalP += item.jumlah; else totalK += item.jumlah;
-                    tabel.insertAdjacentHTML('beforeend', `<tr><td>${item.waktu}</td><td>${item.keterangan}</td><td class="text-right ${item.tipe==='pemasukan'?'c-in':'c-out'}">${item.tipe==='pemasukan'?'+':'-'} Rp ${item.jumlah.toLocaleString('id-ID')}</td></tr>`);
+                    tabel.insertAdjacentHTML('beforeend', `
+                        <tr>
+                            <td>${item.waktu}</td>
+                            <td>${item.keterangan}</td>
+                            <td class="text-right ${item.tipe==='pemasukan'?'c-in':'c-out'}">${item.tipe==='pemasukan'?'+':'-'} Rp ${item.jumlah.toLocaleString('id-ID')}</td>
+                            <td style="text-align:center;"><button class="btn-edit" onclick="editTransaksi('${id}', '${item.keterangan}', ${item.jumlah})">✏️ Edit</button></td>
+                        </tr>
+                    `);
                 });
-
                 updateDashboard(totalP, totalK);
             });
-        }
 
-        ambilData();
-        setInterval(ambilData, 4000);
+            // 2. Ambil Laporan Closing Toko
+            fetch(`${FIREBASE_URL}/closing/${tglKey}.json`).then(res => res.json()).then(data => {
+                let boxNotif = document.getElementById('notif_closing_box');
+                if (data) {
+                    boxNotif.style.display = 'block';
+                    document.getElementById('notif_closing_text').innerHTML = `Jam: ${data.waktu} <br> <b>Catatan Pegawai:</b> ${data.catatan}`;
+                } else { boxNotif.style.display = 'none'; }
+            });
+
+            // 3. Ambil Chat Live
+            fetch(`${FIREBASE_URL}/chat/${tglKey}.json`).then(res => res.json()).then(data => {
+                let box = document.getElementById('admin_chat_box'); box.innerHTML = '';
+                if(data) {
+                    Object.values(data).forEach(c => {
+                        box.insertAdjacentHTML('beforeend', `<div class="chat-line ${c.pengirim==='pegawai'?'pegawai':'me'}"><b>${c.pengirim==='pegawai'?'Pegawai':'Anda'} [${c.waktu}]:</b> ${c.teks}</div>`);
+                    });
+                    box.scrollTop = box.scrollHeight;
+                } else { box.innerHTML = '<center style="color:#777; font-size:12px;">Tidak ada obrolan hari ini.</center>'; }
+            });
+        }, 3000);
     }
 
     function updateDashboard(p, k) {
@@ -99,8 +170,7 @@
     }
 
     function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
-    
-    jalankanPantauLive();
+    jalankanPantauLiveAdmin();
 </script>
 </body>
 </html>

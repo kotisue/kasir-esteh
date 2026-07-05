@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Kasir - Pegawai</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f0f3f5; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .container, .expense-container, .history-container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); width: 100%; max-width: 480px; }
+        h2, h3 { text-align: center; color: #2c3e50; margin-bottom: 15px; font-size: 20px; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
+        h3.title-expense { border-bottom-color: #e74c3c; }
+        h3.title-report { border-bottom-color: #2ecc71; }
+        .menu-section { margin-bottom: 15px; }
+        .menu-title { font-weight: bold; color: #2c3e50; margin-bottom: 8px; font-size: 15px; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 10px; margin-bottom: 6px; border-radius: 8px; border-left: 5px solid #3498db; }
+        .item-row.jeruk { border-left-color: #e67e22; }
+        .item-name { font-weight: 600; color: #333; font-size: 14px; }
+        .item-price { font-size: 12px; color: #7f8c8d; }
+        .quantity-control { display: flex; align-items: center; gap: 10px; }
+        .btn-qty { width: 36px; height: 36px; border: none; background: #e2e8f0; color: #333; font-size: 20px; font-weight: bold; border-radius: 8px; cursor: pointer; }
+        .qty-input { width: 30px; text-align: center; font-size: 16px; font-weight: bold; border: none; background: transparent; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .form-group input { padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 14px; outline: none; }
+        .finance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .finance-box { padding: 12px; border-radius: 10px; color: white; text-align: center; font-size: 13px; font-weight: bold; }
+        .bg-masuk { background: #2ecc71; } .bg-keluar { background: #e74c3c; }
+        .bg-bersih { grid-column: span 2; background: #2c3e50; font-size: 16px; padding: 15px; }
+        .finance-val { font-size: 16px; margin-top: 4px; display: block; }
+        .bg-bersih .finance-val { font-size: 22px; color: #f1c40f; }
+        .total-section { background: #edf2f7; color: #2d3748; padding: 12px; border-radius: 8px; margin-top: 15px; text-align: center; font-weight: bold; }
+        .total-amount { font-size: 24px; color: #2b6cb0; margin-top: 3px; }
+        .action-buttons { display: flex; gap: 8px; margin-top: 12px; }
+        .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; color: white; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-success { background: #2ecc71; } .btn-danger { background: #e74c3c; }
+        .btn-dark { background: #2c3e50; width: 100%; margin-top: 5px; font-size: 15px; padding: 14px; }
+        .table-wrapper { max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f8f9fa; position: sticky; top: 0; color: #4a5568; }
+        .text-right { text-align: right; } .color-out { color: #e74c3c; font-weight: bold; } .color-in { color: #2ecc71; font-weight: bold; }
+        .struk-wrapper { display: none; background: #fff; border: 2px dashed #333; padding: 20px; width: 100%; max-width: 420px; font-family: 'Courier New', monospace; color: #000; }
+        .struk-title { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 5px; }
+        .struk-subtitle { text-align: center; font-size: 12px; margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
+        .struk-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
+        .struk-bold { font-weight: bold; font-size: 14px; border-top: 1px dashed #000; padding-top: 6px; margin-top: 6px; }
+        .struk-divider { border-bottom: 1px dashed #000; margin: 12px 0; }
+        .struk-footer { text-align: center; font-size: 12px; margin-top: 20px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div style="width: 100%; max-width: 480px; text-align: right;">
+    <button onclick="logout()" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 11px; cursor: pointer;">Exit</button>
+</div>
+
+<div id="konten_aplikasi_kasir" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px;">
+    <div class="container">
+        <h2>🥤 Kasir Es Teh & Jeruk</h2>
+        <div class="menu-section">
+            <div class="menu-title">Es Teh</div>
+            <div class="item-row">
+                <div><div class="item-name">Cup Besar</div><div class="item-price">Rp 4.000</div></div>
+                <div class="quantity-control">
+                    <button class="btn-qty" onclick="changeQty('teh_besar', -1)">-</button>
+                    <input type="number" id="teh_besar" class="qty-input" value="0" min="0" readonly>
+                    <button class="btn-qty" onclick="changeQty('teh_besar', 1)">+</button>
+                </div>
+            </div>
+            <div class="item-row">
+                <div><div class="item-name">Cup Kecil</div><div class="item-price">Rp 3.000</div></div>
+                <div class="quantity-control">
+                    <button class="btn-qty" onclick="changeQty('teh_kecil', -1)">-</button>
+                    <input type="number" id="teh_kecil" class="qty-input" value="0" min="0" readonly>
+                    <button class="btn-qty" onclick="changeQty('teh_kecil', 1)">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-section">
+            <div class="menu-title">Es Jeruk</div>
+            <div class="item-row jeruk">
+                <div><div class="item-name">Cup Besar</div><div class="item-price">Rp 7.000</div></div>
+                <div class="quantity-control">
+                    <button class="btn-qty" onclick="changeQty('jeruk_besar', -1)">-</button>
+                    <input type="number" id="jeruk_besar" class="qty-input" value="0" min="0" readonly>
+                    <button class="btn-qty" onclick="changeQty('jeruk_besar', 1)">+</button>
+                </div>
+            </div>
+            <div class="item-row jeruk">
+                <div><div class="item-name">Cup Kecil</div><div class="item-price">Rp 5.000</div></div>
+                <div class="quantity-control">
+                    <button class="btn-qty" onclick="changeQty('jeruk_kecil', -1)">-</button>
+                    <input type="number" id="jeruk_kecil" class="qty-input" value="0" min="0" readonly>
+                    <button class="btn-qty" onclick="changeQty('jeruk_kecil', 1)">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="total-section">
+            <div>Total Transaksi</div>
+            <div class="total-amount" id="total_harga">Rp 0</div>
+        </div>
+        <div class="action-buttons">
+            <button class="btn btn-danger" onclick="resetKalkulator()">Clear</button>
+            <button class="btn btn-success" onclick="simpanPesanan()">Simpan Penjualan</button>
+        </div>
+    </div>
+
+    <div class="expense-container">
+        <h3 class="title-expense">💸 Catat Pengeluaran Toko</h3><br>
+        <div class="form-group">
+            <label>Keperluan Pengeluaran:</label>
+            <input type="text" id="nama_pengeluaran" placeholder="Contoh: Beli Es Batu">
+        </div>
+        <div class="form-group">
+            <label>Nominal Uang (Rp):</label>
+            <input type="number" id="nominal_pengeluaran" placeholder="Contoh: 15000">
+        </div>
+        <button class="btn btn-danger" style="background:#e74c3c; width:100%; margin-top:5px;" onclick="simpanPengeluaran()">Simpan Pengeluaran</button>
+    </div>
+
+    <div class="history-container">
+        <h3 class="title-report">📊 Info Keuangan Hari Ini (HP Ini)</h3><br>
+        <div class="finance-grid">
+            <div class="finance-box bg-masuk">Total Masuk<span class="finance-val" id="box_pendapatan">Rp 0</span></div>
+            <div class="finance-box bg-keluar">Total Keluar<span class="finance-val" id="box_pengeluaran_live">Rp 0</span></div>
+            <div class="finance-box bg-bersih">💰 SISA SALDO / LABA<span class="finance-val" id="box_laba_live">Rp 0</span></div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Jam</th><th>Keterangan</th><th class="text-right">Jumlah</th></tr></thead>
+                <tbody id="tabel_riwayat"></tbody>
+            </table>
+        </div>
+        <button class="btn btn-dark" onclick="prosesClosingHariIni()">🔒 Close Hari Ini (Bikin Struk)</button>
+    </div>
+</div>
+
+<div class="struk-wrapper" id="struk_closing">
+    <div class="struk-title">📢 LAPORAN CLOSING TOKO</div>
+    <div class="struk-subtitle" id="struk_tanggal">-</div>
+    <div style="font-weight: bold; margin-bottom: 5px;">[📈 PRODUK TERJUAL]</div>
+    <div class="struk-row"><span>Es Teh Besar:</span><span id="st_teh_b">0 Cup</span></div>
+    <div class="struk-row"><span>Es Teh Kecil:</span><span id="st_teh_k">0 Cup</span></div>
+    <div class="struk-row"><span>Es Jeruk Besar:</span><span id="st_jeruk_b">0 Cup</span></div>
+    <div class="struk-row"><span>Es Jeruk Kecil:</span><span id="st_jeruk_k">0 Cup</span></div>
+    <div class="struk-divider"></div>
+    <div style="font-weight: bold; margin-bottom: 5px;">[💰 RINGKASAN KEUANGAN]</div>
+    <div class="struk-row"><span>(+) TOTAL OMSET:</span><span id="st_omset">Rp 0</span></div>
+    <div class="struk-row"><span>(-) PENGELUARAN:</span><span id="st_keluar">Rp 0</span></div>
+    <div class="struk-row struk-bold"><span>💰 LABA BERSIH:</span><span id="st_laba">Rp 0</span></div>
+    <div class="struk-footer">
+        <button class="btn btn-danger" onclick="kembaliKeKasir()">🔄 Kembali</button>
+    </div>
+</div>
+
+<script>
+    if (sessionStorage.getItem('role') !== 'kasir') { window.location.href = "index.html"; }
+
+    const FIREBASE_URL = "https://kasir-esteh-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+    const harga = { teh_besar: 4000, teh_kecil: 3000, jeruk_besar: 7000, jeruk_kecil: 5000 };
+    let logKeuangan = [];
+
+    function changeQty(id, change) {
+        const input = document.getElementById(id);
+        let newVal = (parseInt(input.value) || 0) + change;
+        if (newVal < 0) newVal = 0;
+        input.value = newVal;
+        hitungTotal();
+    }
+    function hitungTotal() {
+        let total = 0;
+        for (let p in harga) { total += (parseInt(document.getElementById(p).value) || 0) * harga[p]; }
+        document.getElementById('total_harga').innerText = 'Rp ' + total.toLocaleString('id-ID');
+        return total;
+    }
+    function resetKalkulator() {
+        for (let p in harga) { document.getElementById(p).value = 0; }
+        hitungTotal();
+    }
+    function dapatkanWaktu() {
+        let s = new Date();
+        return s.getHours().toString().padStart(2, '0') + ':' + s.getMinutes().toString().padStart(2, '0');
+    }
+    function dapatkanTanggalKey() {
+        let s = new Date();
+        return s.getFullYear() + "-" + (s.getMonth()+1).toString().padStart(2, '0') + "-" + s.getDate().toString().padStart(2, '0');
+    }
+
+    function kirimKeFirebase(data) {
+        let tglKey = dapatkanTanggalKey();
+        fetch(`${FIREBASE_URL}/transaksi/${tglKey}.json`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        })
+        .then(() => {
+            logKeuangan.unshift(data);
+            renderLaporanLive();
+        });
+    }
+
+    function simpanPesanan() {
+        let total = hitungTotal();
+        if (total === 0) return alert("Pilih item dulu!");
+        let d = [];
+        let qTB = parseInt(document.getElementById('teh_besar').value) || 0;
+        let qTK = parseInt(document.getElementById('teh_kecil').value) || 0;
+        let qJB = parseInt(document.getElementById('jeruk_besar').value) || 0;
+        let qJK = parseInt(document.getElementById('jeruk_kecil').value) || 0;
+
+        if (qTB > 0) d.push(qTB + ' Teh(B)');
+        if (qTK > 0) d.push(qTK + ' Teh(K)');
+        if (qJB > 0) d.push(qJB + ' Jeruk(B)');
+        if (qJK > 0) d.push(qJK + ' Jeruk(K)');
+
+        kirimKeFirebase({
+            waktu: dapatkanWaktu(), tipe: 'pemasukan', keterangan: d.join(', '), jumlah: total,
+            qty_detail: { teh_besar: qTB, teh_kecil: qTK, jeruk_besar: qJB, jeruk_kecil: qJK }
+        });
+        resetKalkulator();
+    }
+
+    function simpanPengeluaran() {
+        let nama = document.getElementById('nama_pengeluaran').value.trim();
+        let nom = parseInt(document.getElementById('nominal_pengeluaran').value) || 0;
+        if (nama === "" || nom <= 0) return alert("Isi dengan benar!");
+
+        kirimKeFirebase({ waktu: dapatkanWaktu(), tipe: 'pengeluaran', keterangan: nama, jumlah: nom });
+        document.getElementById('nama_pengeluaran').value = '';
+        document.getElementById('nominal_pengeluaran').value = '';
+    }
+
+    function renderLaporanLive() {
+        let tabel = document.getElementById('tabel_riwayat'); tabel.innerHTML = '';
+        let totalP = 0, totalK = 0;
+        logKeuangan.forEach(data => {
+            if (data.tipe === 'pemasukan') totalP += data.jumlah; else totalK += data.jumlah;
+            tabel.insertAdjacentHTML('beforeend', `<tr><td>${data.waktu}</td><td>${data.keterangan}</td><td class="text-right ${data.tipe==='pemasukan'?'color-in':'color-out'}">${data.tipe==='pemasukan'?'+':'-'} Rp ${data.jumlah.toLocaleString('id-ID')}</td></tr>`);
+        });
+        document.getElementById('box_pendapatan').innerText = 'Rp ' + totalP.toLocaleString('id-ID');
+        document.getElementById('box_pengeluaran_live').innerText = 'Rp ' + totalK.toLocaleString('id-ID');
+        document.getElementById('box_laba_live').innerText = 'Rp ' + (totalP - totalK).toLocaleString('id-ID');
+    }
+
+    function prosesClosingHariIni() {
+        let totalP = 0, totalK = 0, tTB = 0, tTK = 0, tJB = 0, tJK = 0;
+        logKeuangan.forEach(data => {
+            if (data.tipe === 'pemasukan') {
+                totalP += data.jumlah;
+                if(data.qty_detail) { tTB+=data.qty_detail.teh_besar; tTK+=data.qty_detail.teh_kecil; tJB+=data.qty_detail.jeruk_besar; tJK+=data.qty_detail.jeruk_kecil; }
+            } else { totalK += data.jumlah; }
+        });
+        document.getElementById('st_teh_b').innerText = tTB + " Cup";
+        document.getElementById('st_teh_k').innerText = tTK + " Cup";
+        document.getElementById('st_jeruk_b').innerText = tJB + " Cup";
+        document.getElementById('st_jeruk_k').innerText = tJK + " Cup";
+        document.getElementById('st_omset').innerText = 'Rp ' + totalP.toLocaleString('id-ID');
+        document.getElementById('st_keluar').innerText = 'Rp ' + totalK.toLocaleString('id-ID');
+        document.getElementById('st_laba').innerText = 'Rp ' + (totalP - totalK).toLocaleString('id-ID');
+        document.getElementById('konten_aplikasi_kasir').style.display = 'none';
+        document.getElementById('struk_closing').style.display = 'block';
+    }
+    function kembaliKeKasir() { document.getElementById('konten_aplikasi_kasir').style.display = 'flex'; document.getElementById('struk_closing').style.display = 'none'; }
+    function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
+</script>
+</body>
+</html>

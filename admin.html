@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Owner - Live Pantau</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #1a202c; color: #fff; padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .wrapper { width: 100%; max-width: 600px; background: #2d3748; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        h2 { text-align: center; margin-bottom: 15px; color: #f1c40f; border-bottom: 2px solid #f1c40f; padding-bottom: 5px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .box { padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 14px; }
+        .in { background: #27ae60; } .out { background: #c0392b; }
+        .laba { grid-column: span 2; background: #2980b9; font-size: 18px; }
+        .val { display: block; font-size: 20px; margin-top: 5px; color: #fff; }
+        .laba .val { color: #f1c40f; font-size: 26px; }
+        .table-wrap { background: #1a202c; border-radius: 8px; padding: 10px; max-height: 350px; overflow-y: auto; border: 1px solid #4a5568; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+        th, td { padding: 10px; border-bottom: 1px solid #4a5568; }
+        th { background: #4a5568; color: #f1c40f; position: sticky; top: 0; }
+        .text-right { text-align: right; }
+        .c-in { color: #2ecc71; font-weight: bold; } .c-out { color: #e74c3c; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div style="width: 100%; max-width: 600px; text-align: right;">
+    <button onclick="logout()" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+</div>
+
+<div class="wrapper">
+    <h2>🎯 MONITORING LIVE TOKO (OWNER)</h2>
+    <div style="text-align: center; margin-bottom: 15px; font-size: 14px; color: #cbd5e0;" id="tgl_skrg">Tanggal: -</div>
+
+    <div class="grid">
+        <div class="box in">🟢 LIVE OMSET MASUK<span class="val" id="adm_masuk">Rp 0</span></div>
+        <div class="box out">🔴 LIVE PENGELUARAN<span class="val" id="adm_keluar">Rp 0</span></div>
+        <div class="box laba">💰 LABA BERSIH REAL-TIME<span class="val" id="adm_laba">Rp 0</span></div>
+    </div>
+
+    <h3 style="font-size: 14px; margin-bottom: 8px; color: #f1c40f;">📋 Alur Transaksi Pegawai (Terbaru di Atas):</h3>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Jam</th><th>Keterangan</th><th class="text-right">Jumlah</th></tr></thead>
+            <tbody id="adm_tabel"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    if (sessionStorage.getItem('role') !== 'admin') { window.location.href = "index.html"; }
+
+    const FIREBASE_URL = "https://kasir-esteh-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+    function dapatkanTanggalKey() {
+        let s = new Date();
+        return s.getFullYear() + "-" + (s.getMonth()+1).toString().padStart(2, '0') + "-" + s.getDate().toString().padStart(2, '0');
+    }
+
+    document.getElementById('tgl_skrg').innerText = "Hari Ini: " + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    function jalankanPantauLive() {
+        let tglKey = dapatkanTanggalKey();
+        let urlStream = `${FIREBASE_URL}/transaksi/${tglKey}.json`;
+        
+        function ambilData() {
+            fetch(urlStream)
+            .then(res => res.json())
+            .then(data => {
+                let tabel = document.getElementById('adm_tabel'); tabel.innerHTML = '';
+                let totalP = 0, totalK = 0;
+
+                if (!data) {
+                    tabel.innerHTML = '<tr><td colspan="3" style="text-align:center;">Belum ada penjualan hari ini.</td></tr>';
+                    updateDashboard(0, 0);
+                    return;
+                }
+
+                let listTransaksi = Object.values(data).reverse();
+
+                listTransaksi.forEach(item => {
+                    if (item.tipe === 'pemasukan') totalP += item.jumlah; else totalK += item.jumlah;
+                    tabel.insertAdjacentHTML('beforeend', `<tr><td>${item.waktu}</td><td>${item.keterangan}</td><td class="text-right ${item.tipe==='pemasukan'?'c-in':'c-out'}">${item.tipe==='pemasukan'?'+':'-'} Rp ${item.jumlah.toLocaleString('id-ID')}</td></tr>`);
+                });
+
+                updateDashboard(totalP, totalK);
+            });
+        }
+
+        ambilData();
+        setInterval(ambilData, 4000);
+    }
+
+    function updateDashboard(p, k) {
+        document.getElementById('adm_masuk').innerText = 'Rp ' + p.toLocaleString('id-ID');
+        document.getElementById('adm_keluar').innerText = 'Rp ' + k.toLocaleString('id-ID');
+        document.getElementById('adm_laba').innerText = 'Rp ' + (p - k).toLocaleString('id-ID');
+    }
+
+    function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
+    
+    jalankanPantauLive();
+</script>
+</body>
+</html>

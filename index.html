@@ -38,11 +38,13 @@
         let passIn = document.getElementById('password').value;
         let errorBox = document.getElementById('pesan_error');
 
+        // Sembunyikan pesan error dulu setiap kali tombol ditekan
+        errorBox.style.display = 'none';
+
         if (userIn === "kasir" && passIn === "esteh123") {
             sessionStorage.setItem('role', 'kasir');
             window.location.href = "kasir.html";
-        }    
-        else if (userIn === "admin" && passIn === "admin123") {
+        } else if (userIn === "admin" && passIn === "admin123") {
             sessionStorage.setItem('role', 'admin');
             window.location.href = "admin.html";
         } else {

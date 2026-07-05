@@ -19,7 +19,6 @@
         .btn-primary { background: #3b82f6; }
         .btn-success { background: #10b981; }
         .btn-dark { background: #334155; }
-        .btn-danger { background: #ef4444; }
         .btn:hover { opacity: 0.9; }
 
         .table-wrapper { max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 10px; }
@@ -34,6 +33,9 @@
         .chat-msg { margin-bottom: 8px; padding: 8px 12px; border-radius: 8px; background: #f1f5f9; }
         .chat-msg.pegawai { background: #e0f2fe; border-left: 3px solid #0ea5e9; }
         .chat-msg.admin { background: #fce7f3; border-left: 3px solid #db2777; }
+
+        /* Style Tulisan Sukses */
+        .status-sukses { display: block; text-align: center; font-size: 13px; font-weight: bold; color: #10b981; margin-top: 8px; transition: 0.3s; opacity: 0; }
 
         /* Area Cetak Tersembunyi */
         #area_cetak_laporan { display: none; background: #fff; padding: 20px; font-family: 'Courier New', monospace; color: #000; }
@@ -57,7 +59,6 @@
 
 <div id="main_admin_panel" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px;">
     
-    <!-- Container Utama Admin -->
     <div class="container">
         <h2>👑 Admin Dashboard</h2>
         
@@ -68,9 +69,11 @@
             </div>
             <button class="btn btn-primary" onclick="simpanModalKeFirebase()">💾 Update Modal</button>
             
+            <!-- Tulisan Sukses muncul di sini -->
+            <span id="notif_sukses" class="status-sukses">✓ Modal berhasil diperbarui!</span>
+            
             <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 10px; display: flex; flex-direction: column; gap: 5px;">
                 <button class="btn btn-success" onclick="cetakLaporan('semua')">🖨️ Cetak Semua Transaksi</button>
-                <!-- Opsi tombol cetak hari ini saja -->
                 <button class="btn btn-dark" onclick="cetakLaporan('hari_ini')">📅 Cetak Hari Ini Saja</button>
             </div>
         </div>
@@ -92,7 +95,6 @@
         </div>
     </div>
 
-    <!-- Container Chat (Kembali Seperti Semula) -->
     <div class="chat-container">
         <h3>💬 Chat dengan Kasir Toko</h3><br>
         <div class="chat-box" id="kotak_chat_admin"></div>
@@ -109,14 +111,10 @@
     <div class="print-title">🥤 LAPORAN RIWAYAT TOKO</div>
     <div class="print-subtitle" id="print_info_filter">Periode: Semua Data</div>
     
-    <div id="konten_print_detail">
-        <!-- List transaksi masuk ke sini saat di-print -->
-    </div>
+    <div id="konten_print_detail"></div>
     
     <div class="print-divider"></div>
-    <div style="font-weight: bold; font-size: 14px; text-align: right; line-height: 1.5;" id="print_total_ringkasan">
-        <!-- Hitungan Ringkasan -->
-    </div>
+    <div style="font-weight: bold; font-size: 14px; text-align: right; line-height: 1.5;" id="print_total_ringkasan"></div>
 </div>
 
 <script>
@@ -135,16 +133,24 @@
         return s.getFullYear() + "-" + (s.getMonth()+1).toString().padStart(2, '0') + "-" + s.getDate().toString().padStart(2, '0');
     }
 
+    // Fungsi simpan modal tanpa alert browser
     function simpanModalKeFirebase() {
         let nominal = parseInt(document.getElementById('input_modal_admin').value) || 0;
-        if(nominal <= 0) return alert("Masukkan nominal yang valid!");
+        if(nominal <= 0) return;
 
         fetch(`${FIREBASE_URL}/modal/${tanggalAktif}.json`, {
             method: 'PUT',
             body: JSON.stringify(nominal)
         }).then(() => {
-            alert("Modal hari ini berhasil dikirim!");
             document.getElementById('input_modal_admin').value = '';
+            
+            // Efek memunculkan tulisan sukses selama 3 detik
+            let infoSukses = document.getElementById('notif_sukses');
+            infoSukses.style.opacity = "1";
+            
+            setTimeout(() => {
+                infoSukses.style.opacity = "0";
+            }, 3000);
         });
     }
 
@@ -161,7 +167,6 @@
         setInterval(() => {
             tanggalAktif = dapatkanTanggalKey();
 
-            // 1. Ambil Semua Transaksi
             fetch(`${FIREBASE_URL}/transaksi.json`).then(res => res.json()).then(data => {
                 let tbody = document.getElementById('tabel_admin_transaksi'); tbody.innerHTML = '';
                 if (!data) {
@@ -183,7 +188,6 @@
                 });
             });
 
-            // 2. Ambil Live Chat Hari Ini
             fetch(`${FIREBASE_URL}/chat/${tanggalAktif}.json`).then(res => res.json()).then(data => {
                 let box = document.getElementById('kotak_chat_admin'); box.innerHTML = '';
                 if(data) {
@@ -197,7 +201,6 @@
         }, 3000);
     }
 
-    // Fungsi Cetak dengan Filter Pilihan Omset & Pengeluaran
     function cetakLaporan(opsi) {
         let areaPrint = document.getElementById('konten_print_detail');
         let infoFilter = document.getElementById('print_info_filter');
@@ -207,7 +210,7 @@
         let totalPemasukan = 0;
         let totalPengeluaran = 0;
 
-        if (Object.keys(masterDataTransaksi).length === 0) { return alert("Tidak ada data transaksi!"); }
+        if (Object.keys(masterDataTransaksi).length === 0) { return; }
 
         if (opsi === 'hari_ini') {
             infoFilter.innerText = "Periode: HARI INI (" + tanggalAktif + ")";
@@ -221,7 +224,7 @@
                         </div>
                     `);
                 });
-            } else { return alert("Hari ini belum ada transaksi masuk sama sekali!"); }
+            } else { return; }
         } else {
             infoFilter.innerText = "Periode: SEMUA RIWAYAT DATA TOKO";
             Object.keys(masterDataTransaksi).forEach(tgl => {

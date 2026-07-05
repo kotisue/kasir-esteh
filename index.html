@@ -41,11 +41,12 @@
         if (userIn === "kasir" && passIn === "esteh123") {
             sessionStorage.setItem('role', 'kasir');
             window.location.href = "kasir.html";
-        elif (userIn === "kasir" && passIn === "kasir123") {
+        }
+        elif (userIn === "kasir" && passIn === "esteh123") {
             sessionStorage.setItem('role', 'kasir');
             window.location.href = "kasir.html";
         }
-        } else if (userIn === "admin" && passIn === "admin789") {
+        else if (userIn === "admin" && passIn === "admin789") {
             sessionStorage.setItem('role', 'admin');
             window.location.href = "admin.html";
         } else {

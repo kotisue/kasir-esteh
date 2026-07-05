@@ -7,21 +7,24 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f0f3f5; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        .container, .expense-container, .history-container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); width: 100%; max-width: 480px; }
+        .container, .expense-container, .history-container, .chat-container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); width: 100%; max-width: 480px; }
         h2, h3 { text-align: center; color: #2c3e50; margin-bottom: 15px; font-size: 20px; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
         h3.title-expense { border-bottom-color: #e74c3c; }
         h3.title-report { border-bottom-color: #2ecc71; }
+        h3.title-chat { border-bottom-color: #9b59b6; }
+        .modal-box { background: #e8f4fd; border: 1px dashed #3498db; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; color: #2980b9; margin-bottom: 15px; font-size: 14px; }
         .menu-section { margin-bottom: 15px; }
         .menu-title { font-weight: bold; color: #2c3e50; margin-bottom: 8px; font-size: 15px; }
         .item-row { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 10px; margin-bottom: 6px; border-radius: 8px; border-left: 5px solid #3498db; }
         .item-row.jeruk { border-left-color: #e67e22; }
+        .item-row.jeruk-ori { border-left-color: #f1c40f; }
         .item-name { font-weight: 600; color: #333; font-size: 14px; }
         .item-price { font-size: 12px; color: #7f8c8d; }
         .quantity-control { display: flex; align-items: center; gap: 10px; }
         .btn-qty { width: 36px; height: 36px; border: none; background: #e2e8f0; color: #333; font-size: 20px; font-weight: bold; border-radius: 8px; cursor: pointer; }
         .qty-input { width: 30px; text-align: center; font-size: 16px; font-weight: bold; border: none; background: transparent; }
         .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-        .form-group input { padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 14px; outline: none; }
+        .form-group input, .form-group textarea { padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 14px; outline: none; width: 100%; }
         .finance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
         .finance-box { padding: 12px; border-radius: 10px; color: white; text-align: center; font-size: 13px; font-weight: bold; }
         .bg-masuk { background: #2ecc71; } .bg-keluar { background: #e74c3c; }
@@ -33,12 +36,16 @@
         .action-buttons { display: flex; gap: 8px; margin-top: 12px; }
         .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; color: white; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-success { background: #2ecc71; } .btn-danger { background: #e74c3c; }
+        .btn-purple { background: #9b59b6; width: 100%; margin-top: 5px; }
         .btn-dark { background: #2c3e50; width: 100%; margin-top: 5px; font-size: 15px; padding: 14px; }
         .table-wrapper { max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th, td { padding: 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
         th { background: #f8f9fa; position: sticky; top: 0; color: #4a5568; }
         .text-right { text-align: right; } .color-out { color: #e74c3c; font-weight: bold; } .color-in { color: #2ecc71; font-weight: bold; }
+        .chat-box { max-height: 150px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 10px; font-size: 13px; }
+        .chat-msg { margin-bottom: 8px; padding: 6px 10px; border-radius: 8px; background: #e9f5ff; }
+        .chat-msg.owner { background: #fce4ec; border-left: 3px solid #e91e63; }
         .struk-wrapper { display: none; background: #fff; border: 2px dashed #333; padding: 20px; width: 100%; max-width: 420px; font-family: 'Courier New', monospace; color: #000; }
         .struk-title { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 5px; }
         .struk-subtitle { text-align: center; font-size: 12px; margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
@@ -55,8 +62,11 @@
 </div>
 
 <div id="konten_aplikasi_kasir" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px;">
+    
     <div class="container">
         <h2>🥤 Kasir Es Teh & Jeruk</h2>
+        <div class="modal-box" id="info_modal">💰 Modal Hari Ini: Rp 0</div>
+        
         <div class="menu-section">
             <div class="menu-title">Es Teh</div>
             <div class="item-row">
@@ -78,7 +88,7 @@
         </div>
 
         <div class="menu-section">
-            <div class="menu-title">Es Jeruk</div>
+            <div class="menu-title">Es Jeruk Peras</div>
             <div class="item-row jeruk">
                 <div><div class="item-name">Cup Besar</div><div class="item-price">Rp 7.000</div></div>
                 <div class="quantity-control">
@@ -97,6 +107,26 @@
             </div>
         </div>
 
+        <div class="menu-section">
+            <div class="menu-title">Es Jeruk Original</div>
+            <div class="item-row jeruk-ori">
+                <div><div class="item-name">Cup Besar</div><div class="item-price">Rp 6.000</div></div>
+                <div class="quantity-control">
+                    <button class="btn-qty" onclick="changeQty('jeruk_ori_besar', -1)">-</button>
+                    <input type="number" id="jeruk_ori_besar" class="qty-input" value="0" min="0" readonly>
+                    <button class="btn-qty" onclick="changeQty('jeruk_ori_besar', 1)">+</button>
+                </div>
+            </div>
+            <div class="item-row jeruk-ori">
+                <div><div class="item-name">Cup Kecil</div><div class="item-price">Rp 4.000</div></div>
+                <div class="quantity-control">
+                    <button class="btn-qty" onclick="changeQty('jeruk_ori_kecil', -1)">-</button>
+                    <input type="number" id="jeruk_ori_kecil" class="qty-input" value="0" min="0" readonly>
+                    <button class="btn-qty" onclick="changeQty('jeruk_ori_kecil', 1)">+</button>
+                </div>
+            </div>
+        </div>
+
         <div class="total-section">
             <div>Total Transaksi</div>
             <div class="total-amount" id="total_harga">Rp 0</div>
@@ -105,6 +135,15 @@
             <button class="btn btn-danger" onclick="resetKalkulator()">Clear</button>
             <button class="btn btn-success" onclick="simpanPesanan()">Simpan Penjualan</button>
         </div>
+    </div>
+
+    <div class="chat-container">
+        <h3 class="title-chat">💬 Hubungi Admin/Owner</h3><br>
+        <div class="chat-box" id="kotak_chat"></div>
+        <div class="form-group" style="margin-bottom:5px;">
+            <input type="text" id="pesan_chat" placeholder="Ketik pesan ke bos...">
+        </div>
+        <button class="btn btn-purple" onclick="kirimChat()">Kirim Pesan</button>
     </div>
 
     <div class="expense-container">
@@ -121,7 +160,7 @@
     </div>
 
     <div class="history-container">
-        <h3 class="title-report">📊 Info Keuangan Hari Ini (HP Ini)</h3><br>
+        <h3 class="title-report">📊 Info Keuangan Hari Ini</h3><br>
         <div class="finance-grid">
             <div class="finance-box bg-masuk">Total Masuk<span class="finance-val" id="box_pendapatan">Rp 0</span></div>
             <div class="finance-box bg-keluar">Total Keluar<span class="finance-val" id="box_pengeluaran_live">Rp 0</span></div>
@@ -132,6 +171,11 @@
                 <thead><tr><th>Jam</th><th>Keterangan</th><th class="text-right">Jumlah</th></tr></thead>
                 <tbody id="tabel_riwayat"></tbody>
             </table>
+        </div>
+        
+        <div class="form-group" style="margin-top: 15px;">
+            <label style="font-weight: bold; font-size: 13px; color:#2c3e50;">Tambahkan Catatan Closing untuk Admin:</label>
+            <textarea id="catatan_closing" rows="2" placeholder="Contoh: Cup sisa 10, es batu aman bos..."></textarea>
         </div>
         <button class="btn btn-dark" onclick="prosesClosingHariIni()">🔒 Close Hari Ini (Bikin Struk)</button>
     </div>
@@ -145,13 +189,18 @@
     <div class="struk-row"><span>Es Teh Kecil:</span><span id="st_teh_k">0 Cup</span></div>
     <div class="struk-row"><span>Es Jeruk Besar:</span><span id="st_jeruk_b">0 Cup</span></div>
     <div class="struk-row"><span>Es Jeruk Kecil:</span><span id="st_jeruk_k">0 Cup</span></div>
+    <div class="struk-row"><span>Jeruk Ori Besar:</span><span id="st_jori_b">0 Cup</span></div>
+    <div class="struk-row"><span>Jeruk Ori Kecil:</span><span id="st_jori_k">0 Cup</span></div>
     <div class="struk-divider"></div>
     <div style="font-weight: bold; margin-bottom: 5px;">[💰 RINGKASAN KEUANGAN]</div>
     <div class="struk-row"><span>(+) TOTAL OMSET:</span><span id="st_omset">Rp 0</span></div>
     <div class="struk-row"><span>(-) PENGELUARAN:</span><span id="st_keluar">Rp 0</span></div>
     <div class="struk-row struk-bold"><span>💰 LABA BERSIH:</span><span id="st_laba">Rp 0</span></div>
+    <div class="struk-divider"></div>
+    <div style="font-weight: bold; margin-bottom: 5px;">[📝 CATATAN PEGAWAI]</div>
+    <div id="st_catatan_text" style="font-size: 12px; line-height: 1.4; color: #333;">-</div>
     <div class="struk-footer">
-        <button class="btn btn-danger" onclick="kembaliKeKasir()">🔄 Kembali</button>
+        <button class="btn btn-danger" onclick="kirimClosingKeAdmin()">🚀 Kirim Laporan ke Admin</button>
     </div>
 </div>
 
@@ -160,8 +209,9 @@
 
     const FIREBASE_URL = "https://kasir-esteh-default-rtdb.asia-southeast1.firebasedatabase.app";
 
-    const harga = { teh_besar: 4000, teh_kecil: 3000, jeruk_besar: 7000, jeruk_kecil: 5000 };
-    let logKeuangan = []; // Akan diisi otomatis dari Firebase secara Live
+    const harga = { teh_besar: 4000, teh_kecil: 3000, jeruk_besar: 7000, jeruk_kecil: 5000, jeruk_ori_besar: 6000, jeruk_ori_kecil: 4000 };
+    let logKeuangan = [];
+    let modalHariIni = 0;
 
     function changeQty(id, change) {
         const input = document.getElementById(id);
@@ -189,14 +239,12 @@
         return s.getFullYear() + "-" + (s.getMonth()+1).toString().padStart(2, '0') + "-" + s.getDate().toString().padStart(2, '0');
     }
 
-    // KIRIM DATA KE FIREBASE
     function kirimKeFirebase(data) {
         let tglKey = dapatkanTanggalKey();
         fetch(`${FIREBASE_URL}/transaksi/${tglKey}.json`, {
             method: 'POST',
             body: JSON.stringify(data)
         });
-        // Tidak perlu render manual lagi di sini karena sudah dipantau otomatis oleh fungsi jalankanPantauLiveKasir() di bawah
     }
 
     function simpanPesanan() {
@@ -207,15 +255,19 @@
         let qTK = parseInt(document.getElementById('teh_kecil').value) || 0;
         let qJB = parseInt(document.getElementById('jeruk_besar').value) || 0;
         let qJK = parseInt(document.getElementById('jeruk_kecil').value) || 0;
+        let qJOB = parseInt(document.getElementById('jeruk_ori_besar').value) || 0;
+        let qJOK = parseInt(document.getElementById('jeruk_ori_kecil').value) || 0;
 
         if (qTB > 0) d.push(qTB + ' Teh(B)');
         if (qTK > 0) d.push(qTK + ' Teh(K)');
         if (qJB > 0) d.push(qJB + ' Jeruk(B)');
         if (qJK > 0) d.push(qJK + ' Jeruk(K)');
+        if (qJOB > 0) d.push(qJOB + ' J.Ori(B)');
+        if (qJOK > 0) d.push(qJOK + ' J.Ori(K)');
 
         kirimKeFirebase({
             waktu: dapatkanWaktu(), tipe: 'pemasukan', keterangan: d.join(', '), jumlah: total,
-            qty_detail: { teh_besar: qTB, teh_kecil: qTK, jeruk_besar: qJB, jeruk_kecil: qJK }
+            qty_detail: { teh_besar: qTB, teh_kecil: qTK, jeruk_besar: qJB, jeruk_kecil: qJK, jeruk_ori_besar: qJOB, jeruk_ori_kecil: qJOK }
         });
         resetKalkulator();
     }
@@ -230,67 +282,104 @@
         document.getElementById('nominal_pengeluaran').value = '';
     }
 
-    // BARU: Fungsi ini bikin HP Semua Pegawai otomatis narik data terbaru dari Firebase tiap 4 detik
+    function kirimChat() {
+        let msg = document.getElementById('pesan_chat').value.trim();
+        if (msg === "") return;
+        let tglKey = dapatkanTanggalKey();
+        fetch(`${FIREBASE_URL}/chat/${tglKey}.json`, {
+            method: 'POST',
+            body: JSON.stringify({ pengirim: 'pegawai', waktu: dapatkanWaktu(), teks: msg })
+        }).then(() => { document.getElementById('pesan_chat').value = ''; });
+    }
+
     function jalankanPantauLiveKasir() {
         let tglKey = dapatkanTanggalKey();
-        let urlStream = `${FIREBASE_URL}/transaksi/${tglKey}.json`;
         
-        function ambilData() {
-            fetch(urlStream)
-            .then(res => res.json())
-            .then(data => {
+        // 1. Pantau Transaksi Keuangan
+        setInterval(() => {
+            fetch(`${FIREBASE_URL}/transaksi/${tglKey}.json`).then(res => res.json()).then(data => {
                 let tabel = document.getElementById('tabel_riwayat'); tabel.innerHTML = '';
                 let totalP = 0, totalK = 0;
-
                 if (!data) {
                     tabel.innerHTML = '<tr><td colspan="3" style="text-align:center;">Belum ada transaksi hari ini.</td></tr>';
                     document.getElementById('box_pendapatan').innerText = 'Rp 0';
                     document.getElementById('box_pengeluaran_live').innerText = 'Rp 0';
                     document.getElementById('box_laba_live').innerText = 'Rp 0';
-                    logKeuangan = [];
-                    return;
+                    logKeuangan = []; return;
                 }
-
-                // Ubah data Firebase jadi Array dan balik biar yang terbaru di atas
-                logKeuangan = Object.values(data).reverse();
-
+                logKeuangan = Object.entries(data).map(([id, val]) => ({ id, ...val })).reverse();
                 logKeuangan.forEach(item => {
                     if (item.tipe === 'pemasukan') totalP += item.jumlah; else totalK += item.jumlah;
                     tabel.insertAdjacentHTML('beforeend', `<tr><td>${item.waktu}</td><td>${item.keterangan}</td><td class="text-right ${item.tipe==='pemasukan'?'color-in':'color-out'}">${item.tipe==='pemasukan'?'+':'-'} Rp ${item.jumlah.toLocaleString('id-ID')}</td></tr>`);
                 });
-
                 document.getElementById('box_pendapatan').innerText = 'Rp ' + totalP.toLocaleString('id-ID');
                 document.getElementById('box_pengeluaran_live').innerText = 'Rp ' + totalK.toLocaleString('id-ID');
                 document.getElementById('box_laba_live').innerText = 'Rp ' + (totalP - totalK).toLocaleString('id-ID');
             });
-        }
 
-        ambilData();
-        setInterval(ambilData, 4000); // Cek data baru setiap 4 detik sekali
+            // 2. Pantau Uang Modal dari Admin
+            fetch(`${FIREBASE_URL}/modal/${tglKey}.json`).then(res => res.json()).then(data => {
+                modalHariIni = data || 0;
+                document.getElementById('info_modal').innerText = "💰 Modal Hari Ini: Rp " + modalHariIni.toLocaleString('id-ID');
+            });
+
+            // 3. Pantau Chatting
+            fetch(`${FIREBASE_URL}/chat/${tglKey}.json`).then(res => res.json()).then(data => {
+                let box = document.getElementById('kotak_chat'); box.innerHTML = '';
+                if(data) {
+                    Object.values(data).forEach(c => {
+                        box.insertAdjacentHTML('beforeend', `<div class="chat-msg ${c.pengirim==='admin'?'owner':''}"><b>${c.pengirim==='admin'?'Boss':'Kamu'} [${c.waktu}]:</b> ${c.teks}</div>`);
+                    });
+                    box.scrollTop = box.scrollHeight;
+                } else { box.innerHTML = '<center style="color:#aaa; font-size:12px;">Belum ada obrolan.</center>'; }
+            });
+        }, 3000);
     }
 
     function prosesClosingHariIni() {
-        let totalP = 0, totalK = 0, tTB = 0, tTK = 0, tJB = 0, tJK = 0;
+        let totalP = 0, totalK = 0, tTB = 0, tTK = 0, tJB = 0, tJK = 0, tJOB = 0, tJOK = 0;
         logKeuangan.forEach(data => {
             if (data.tipe === 'pemasukan') {
                 totalP += data.jumlah;
-                if(data.qty_detail) { tTB+=data.qty_detail.teh_besar; tTK+=data.qty_detail.teh_kecil; tJB+=data.qty_detail.jeruk_besar; tJK+=data.qty_detail.jeruk_kecil; }
+                if(data.qty_detail) { 
+                    tTB+=(data.qty_detail.teh_besar || 0); tTK+=(data.qty_detail.teh_kecil || 0); 
+                    tJB+=(data.qty_detail.jeruk_besar || 0); tJK+=(data.qty_detail.jeruk_kecil || 0); 
+                    tJOB+=(data.qty_detail.jeruk_ori_besar || 0); tJOK+=(data.qty_detail.jeruk_ori_kecil || 0); 
+                }
             } else { totalK += data.jumlah; }
         });
         document.getElementById('st_teh_b').innerText = tTB + " Cup";
         document.getElementById('st_teh_k').innerText = tTK + " Cup";
         document.getElementById('st_jeruk_b').innerText = tJB + " Cup";
         document.getElementById('st_jeruk_k').innerText = tJK + " Cup";
+        document.getElementById('st_jori_b').innerText = tJOB + " Cup";
+        document.getElementById('st_jori_k').innerText = tJOK + " Cup";
         document.getElementById('st_omset').innerText = 'Rp ' + totalP.toLocaleString('id-ID');
         document.getElementById('st_keluar').innerText = 'Rp ' + totalK.toLocaleString('id-ID');
         document.getElementById('st_laba').innerText = 'Rp ' + (totalP - totalK).toLocaleString('id-ID');
+        
+        let txtCatatan = document.getElementById('catatan_closing').value.trim() || "Tidak ada catatan.";
+        document.getElementById('st_catatan_text').innerText = txtCatatan;
+
         document.getElementById('konten_aplikasi_kasir').style.display = 'none';
         document.getElementById('struk_closing').style.display = 'block';
     }
-    function kembaliKeKasir() { document.getElementById('konten_aplikasi_kasir').style.display = 'flex'; document.getElementById('struk_closing').style.display = 'none'; }
+
+    function kirimClosingKeAdmin() {
+        let tglKey = dapatkanTanggalKey();
+        let isiCatatan = document.getElementById('st_catatan_text').innerText;
+        fetch(`${FIREBASE_URL}/closing/${tglKey}.json`, {
+            method: 'SET',
+            body: JSON.stringify({ waktu: dapatkanWaktu(), catatan: isiCatatan, status: 'Sudah Closing' })
+        }).then(() => {
+            alert("Laporan Berhasil Dikirim ke Bos!");
+            document.getElementById('catatan_closing').value = '';
+            document.getElementById('konten_aplikasi_kasir').style.display = 'flex';
+            document.getElementById('struk_closing').style.display = 'none';
+        });
+    }
+
     function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
-    
-    // Jalankan pantau live untuk kasir saat halaman dibuka
     jalankanPantauLiveKasir();
 </script>
 </body>

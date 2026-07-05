@@ -6,33 +6,41 @@
     <title>Sistem Kasir - Dashboard Admin</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f4f6f9; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 800px; }
-        h2, h3 { color: #2c3e50; margin-bottom: 15px; border-bottom: 3px solid #3498db; padding-bottom: 8px; }
+        body { background-color: #1e293b; padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .container, .chat-container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h2, h3 { text-align: center; color: #1e293b; margin-bottom: 15px; font-size: 20px; border-bottom: 3px solid #e2e8f0; padding-bottom: 8px; }
         
-        .control-panel { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; background: #eef2f7; padding: 15px; border-radius: 10px; }
-        .form-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 150px; }
-        .form-group label { font-size: 13px; font-weight: bold; color: #4a5568; }
-        .form-group input, .form-group select { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; }
+        .control-panel { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+        .form-group label { font-size: 13px; font-weight: bold; color: #475569; }
+        .form-group input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; }
         
-        .btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; font-size: 14px; }
-        .btn-primary { background: #3498db; }
-        .btn-success { background: #2ecc71; }
-        .btn-dark { background: #34495e; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; transition: 0.2s; }
+        .btn-primary { background: #3b82f6; }
+        .btn-success { background: #10b981; }
+        .btn-dark { background: #334155; }
+        .btn-danger { background: #ef4444; }
         .btn:hover { opacity: 0.9; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        th { background: #34495e; color: white; }
-        tr:nth-child(even) { background: #f8f9fa; }
+        .table-wrapper { max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f1f5f9; position: sticky; top: 0; color: #475569; font-weight: bold; }
         .text-right { text-align: right; }
-        .color-in { color: #2ecc71; font-weight: bold; }
-        .color-out { color: #e74c3c; font-weight: bold; }
+        .color-in { color: #10b981; font-weight: bold; }
+        .color-out { color: #ef4444; font-weight: bold; }
 
-        /* Gaya Khusus Cetak / Print Struk Laporan */
-        #area_cetak_laporan { display: none; background: white; color: black; padding: 30px; font-family: 'Courier New', monospace; }
-        .print-title { text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 5px; }
-        .print-subtitle { text-align: center; font-size: 14px; margin-bottom: 20px; border-bottom: 2px dashed #000; padding-bottom: 10px; }
+        .chat-box { max-height: 180px; overflow-y: auto; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 10px; font-size: 13px; }
+        .chat-msg { margin-bottom: 8px; padding: 8px 12px; border-radius: 8px; background: #f1f5f9; }
+        .chat-msg.pegawai { background: #e0f2fe; border-left: 3px solid #0ea5e9; }
+        .chat-msg.admin { background: #fce7f3; border-left: 3px solid #db2777; }
+
+        /* Area Cetak Tersembunyi */
+        #area_cetak_laporan { display: none; background: #fff; padding: 20px; font-family: 'Courier New', monospace; color: #000; }
+        .print-title { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 5px; }
+        .print-subtitle { text-align: center; font-size: 12px; margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
+        .print-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
+        .print-divider { border-bottom: 1px dashed #000; margin: 12px 0; }
 
         @media print {
             body * { visibility: hidden; }
@@ -43,188 +51,204 @@
 </head>
 <body>
 
-<div class="container" id="main_admin_panel">
-    <h2>👑 Dashboard Admin / Owner</h2>
-    
-    <!-- Panel Kontrol & Opsi Cetak -->
-    <div class="control-panel">
-        <div class="form-group">
-            <label>Atur Modal Hari Ini (Rp):</label>
-            <input type="number" id="input_modal_admin" placeholder="Contoh: 50000">
-        </div>
-        <div style="display: flex; align-items: flex-end; gap: 10px; width: 100%; margin-top: 10px;">
-            <button class="btn btn-primary" onclick="simpanModalKeFirebase()">💾 Set Modal</button>
-            <button class="btn btn-success" onclick="cetakLaporan('semua')">🖨️ Cetak Semua Riwayat</button>
-            <!-- OPSI BARU: Cetak Hari Ini Saja -->
-            <button class="btn btn-dark" onclick="cetakLaporan('hari_ini')">📅 Cetak Hari Ini Saja</button>
-        </div>
-    </div>
-
-    <h3>📊 Riwayat Seluruh Transaksi</h3>
-    <div style="overflow-x: auto;">
-        <table>
-            <thead>
-                <tr>
-                    <th>Tanggal/Hari</th>
-                    <th>Jam</th>
-                    <th>Keterangan Penjualan / Pengeluaran</th>
-                    <th class="text-right">Jumlah</th>
-                </tr>
-            </thead>
-            <tbody id="tabel_admin_transaksi">
-                <!-- Data otomatis load dari Firebase -->
-            </tbody>
-        </table>
-    </div>
+<div style="width: 100%; max-width: 500px; text-align: right;">
+    <button onclick="logout()" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 11px; cursor: pointer;">Exit</button>
 </div>
 
-<!-- ================= AREA KHUSUS CETAK PRINTER ================= -->
+<div id="main_admin_panel" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px;">
+    
+    <!-- Container Utama Admin -->
+    <div class="container">
+        <h2>👑 Admin Dashboard</h2>
+        
+        <div class="control-panel">
+            <div class="form-group">
+                <label>Set Modal Kasir Hari Ini (Rp):</label>
+                <input type="number" id="input_modal_admin" placeholder="Contoh: 50000">
+            </div>
+            <button class="btn btn-primary" onclick="simpanModalKeFirebase()">💾 Update Modal</button>
+            
+            <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 10px; display: flex; flex-direction: column; gap: 5px;">
+                <button class="btn btn-success" onclick="cetakLaporan('semua')">🖨️ Cetak Semua Transaksi</button>
+                <!-- Opsi tombol cetak hari ini saja -->
+                <button class="btn btn-dark" onclick="cetakLaporan('hari_ini')">📅 Cetak Hari Ini Saja</button>
+            </div>
+        </div>
+
+        <h3>📊 Semua History Transaksi</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Jam/Tgl</th>
+                        <th>Keterangan</th>
+                        <th class="text-right">Jumlah</th>
+                    </tr>
+                </thead>
+                <tbody id="tabel_admin_transaksi">
+                    <!-- Data Live -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Container Chat (Kembali Seperti Semula) -->
+    <div class="chat-container">
+        <h3>💬 Chat dengan Kasir Toko</h3><br>
+        <div class="chat-box" id="kotak_chat_admin"></div>
+        <div class="form-group" style="margin-bottom:5px;">
+            <input type="text" id="pesan_chat_admin" placeholder="Balas pesan kasir...">
+        </div>
+        <button class="btn btn-primary" style="background:#9b59b6;" onclick="kirimChatAdmin()">Kirim Pesan</button>
+    </div>
+
+</div>
+
+<!-- ================= AREA STRUK PRINTER ================= -->
 <div id="area_cetak_laporan">
-    <div class="print-title">🥤 LAPORAN KEUANGAN ES TEH & JERUK</div>
+    <div class="print-title">🥤 LAPORAN RIWAYAT TOKO</div>
     <div class="print-subtitle" id="print_info_filter">Periode: Semua Data</div>
     
-    <table style="width: 100%; margin-bottom: 20px;">
-        <thead>
-            <tr>
-                <th style="background:#000; color:#fff;">Waktu</th>
-                <th style="background:#000; color:#fff;">Keterangan</th>
-                <th style="background:#000; color:#fff;" class="text-right">Jumlah</th>
-            </tr>
-        </thead>
-        <tbody id="tabel_print_konten">
-            <!-- Data filter masuk ke sini -->
-        </tbody>
-    </table>
+    <div id="konten_print_detail">
+        <!-- List transaksi masuk ke sini saat di-print -->
+    </div>
     
-    <div style="border-top: 2px dashed #000; padding-top: 10px; text-align: right; font-weight: bold; font-size: 16px;" id="print_total_ringkasan">
-        <!-- Total Omset, Pengeluaran, Laba Bersih dihitung otomatis -->
+    <div class="print-divider"></div>
+    <div style="font-weight: bold; font-size: 14px; text-align: right; line-height: 1.5;" id="print_total_ringkasan">
+        <!-- Hitungan Ringkasan -->
     </div>
 </div>
 
 <script>
-    // Proteksi Login Admin
     if (sessionStorage.getItem('role') !== 'admin') { window.location.href = "index.html"; }
 
     const FIREBASE_URL = "https://kasir-esteh-default-rtdb.asia-southeast1.firebasedatabase.app";
-    let masterDataTransaksi = {}; // Menyimpan data mentah dari Firebase
+    let masterDataTransaksi = {};
+    let tanggalAktif = dapatkanTanggalKey();
 
-    function dapatkanTanggalHariIni() {
+    function dapatkanWaktu() {
+        let s = new Date();
+        return s.getHours().toString().padStart(2, '0') + ':' + s.getMinutes().toString().padStart(2, '0');
+    }
+    function dapatkanTanggalKey() {
         let s = new Date();
         return s.getFullYear() + "-" + (s.getMonth()+1).toString().padStart(2, '0') + "-" + s.getDate().toString().padStart(2, '0');
     }
 
     function simpanModalKeFirebase() {
-        let tgl = dapatkanTanggalHariIni();
         let nominal = parseInt(document.getElementById('input_modal_admin').value) || 0;
-        if(nominal <= 0) return alert("Masukkan nominal modal dengan benar!");
+        if(nominal <= 0) return alert("Masukkan nominal yang valid!");
 
-        fetch(`${FIREBASE_URL}/modal/${tgl}.json`, {
+        fetch(`${FIREBASE_URL}/modal/${tanggalAktif}.json`, {
             method: 'PUT',
             body: JSON.stringify(nominal)
         }).then(() => {
-            alert("Modal hari ini berhasil diset!");
+            alert("Modal hari ini berhasil dikirim!");
             document.getElementById('input_modal_admin').value = '';
         });
     }
 
-    // Ambil Data Transaksi Secara Live
-    function muatDataTransaksiAdmin() {
+    function kirimChatAdmin() {
+        let msg = document.getElementById('pesan_chat_admin').value.trim();
+        if (msg === "") return;
+        fetch(`${FIREBASE_URL}/chat/${tanggalAktif}.json`, {
+            method: 'POST',
+            body: JSON.stringify({ pengirim: 'admin', waktu: dapatkanWaktu(), teks: msg })
+        }).then(() => { document.getElementById('pesan_chat_admin').value = ''; });
+    }
+
+    function jalankanLiveDashboardAdmin() {
         setInterval(() => {
+            tanggalAktif = dapatkanTanggalKey();
+
+            // 1. Ambil Semua Transaksi
             fetch(`${FIREBASE_URL}/transaksi.json`).then(res => res.json()).then(data => {
-                let tbody = document.getElementById('tabel_admin_transaksi');
-                tbody.innerHTML = '';
+                let tbody = document.getElementById('tabel_admin_transaksi'); tbody.innerHTML = '';
                 if (!data) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada riwayat transaksi.</td></tr>';
-                    masterDataTransaksi = {};
-                    return;
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Belum ada data transaksi.</td></tr>';
+                    masterDataTransaksi = {}; return;
                 }
+                masterDataTransaksi = data;
                 
-                masterDataTransaksi = data; // Simpan ke variabel global untuk dipakai fitur cetak
-                
-                // Looping tanggal dan ID transaksi
-                Object.keys(data).reverse().forEach(tanggal => {
-                    Object.values(data[tanggal]).reverse().forEach(item => {
+                Object.keys(data).reverse().forEach(tgl => {
+                    Object.values(data[tgl]).reverse().forEach(item => {
                         tbody.insertAdjacentHTML('beforeend', `
                             <tr>
-                                <td><b>${tanggal}</b></td>
-                                <td>${item.waktu}</td>
+                                <td><small style="color:#777; display:block;">${tgl}</small>${item.waktu}</td>
                                 <td>${item.keterangan}</td>
-                                <td class="text-right ${item.tipe === 'pemasukan' ? 'color-in' : 'color-out'}">
-                                    ${item.tipe === 'pemasukan' ? '+' : '-'} Rp ${item.jumlah.toLocaleString('id-ID')}
-                                </td>
+                                <td class="text-right ${item.tipe==='pemasukan'?'color-in':'color-out'}">${item.tipe==='pemasukan'?'+':'-'} ${item.jumlah.toLocaleString('id-ID')}</td>
                             </tr>
                         `);
                     });
                 });
             });
+
+            // 2. Ambil Live Chat Hari Ini
+            fetch(`${FIREBASE_URL}/chat/${tanggalAktif}.json`).then(res => res.json()).then(data => {
+                let box = document.getElementById('kotak_chat_admin'); box.innerHTML = '';
+                if(data) {
+                    Object.values(data).forEach(c => {
+                        box.insertAdjacentHTML('beforeend', `<div class="chat-msg ${c.pengirim==='pegawai'?'pegawai':'admin'}"><b>${c.pengirim==='admin'?'Kamu (Boss)':'Kasir'} [${c.waktu}]:</b> ${c.teks}</div>`);
+                    });
+                    box.scrollTop = box.scrollHeight;
+                } else { box.innerHTML = '<center style="color:#aaa; font-size:12px;">Belum ada obrolan hari ini.</center>'; }
+            });
+
         }, 3000);
     }
 
-    // FUNGSI UTAMA: Cetak dengan Pilihan Opsi Filter
+    // Fungsi Cetak dengan Filter Pilihan Omset & Pengeluaran
     function cetakLaporan(opsi) {
-        let tglHariIni = dapatkanTanggalHariIni();
-        let tabelPrint = document.getElementById('tabel_print_konten');
+        let areaPrint = document.getElementById('konten_print_detail');
         let infoFilter = document.getElementById('print_info_filter');
         let ringkasanText = document.getElementById('print_total_ringkasan');
         
-        tabelPrint.innerHTML = '';
+        areaPrint.innerHTML = '';
         let totalPemasukan = 0;
         let totalPengeluaran = 0;
 
-        if (Object.keys(masterDataTransaksi).length === 0) {
-            return alert("Tidak ada data yang bisa dicetak!");
-        }
+        if (Object.keys(masterDataTransaksi).length === 0) { return alert("Tidak ada data transaksi!"); }
 
         if (opsi === 'hari_ini') {
-            infoFilter.innerText = "Periode: HARI INI SAJA (" + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ")";
-            
-            // Hanya ambil data yang key tanggalnya sama dengan hari ini
-            if (masterDataTransaksi[tglHariIni]) {
-                Object.values(masterDataTransaksi[tglHariIni]).forEach(item => {
+            infoFilter.innerText = "Periode: HARI INI (" + tanggalAktif + ")";
+            if (masterDataTransaksi[tanggalAktif]) {
+                Object.values(masterDataTransaksi[tanggalAktif]).forEach(item => {
                     if (item.tipe === 'pemasukan') totalPemasukan += item.jumlah; else totalPengeluaran += item.jumlah;
-                    
-                    tabelPrint.insertAdjacentHTML('beforeend', `
-                        <tr>
-                            <td>${item.waktu}</td>
-                            <td>${item.keterangan}</td>
-                            <td class="text-right">${item.tipe === 'pemasukan' ? '+' : '-'} ${item.jumlah.toLocaleString('id-ID')}</td>
-                        </tr>
+                    areaPrint.insertAdjacentHTML('beforeend', `
+                        <div class="print-row">
+                            <span>[${item.waktu}] ${item.keterangan}</span>
+                            <span>${item.tipe==='pemasukan'?'+':'-'}Rp ${item.jumlah.toLocaleString('id-ID')}</span>
+                        </div>
                     `);
                 });
-            } else {
-                return alert("Belum ada transaksi masuk untuk hari ini!");
-            }
+            } else { return alert("Hari ini belum ada transaksi masuk sama sekali!"); }
         } else {
-            // Cetak Semua Riwayat
-            infoFilter.innerText = "Periode: Semua Riwayat Transaksi";
-            Object.keys(masterDataTransaksi).forEach(tanggal => {
-                Object.values(masterDataTransaksi[tanggal]).forEach(item => {
+            infoFilter.innerText = "Periode: SEMUA RIWAYAT DATA TOKO";
+            Object.keys(masterDataTransaksi).forEach(tgl => {
+                Object.values(masterDataTransaksi[tgl]).forEach(item => {
                     if (item.tipe === 'pemasukan') totalPemasukan += item.jumlah; else totalPengeluaran += item.jumlah;
-                    
-                    tabelPrint.insertAdjacentHTML('beforeend', `
-                        <tr>
-                            <td>${tanggal} ${item.waktu}</td>
-                            <td>${item.keterangan}</td>
-                            <td class="text-right">${item.tipe === 'pemasukan' ? '+' : '-'} ${item.jumlah.toLocaleString('id-ID')}</td>
-                        </tr>
+                    areaPrint.insertAdjacentHTML('beforeend', `
+                        <div class="print-row">
+                            <span>[${tgl} ${item.waktu}] ${item.keterangan}</span>
+                            <span>${item.tipe==='pemasukan'?'+':'-'}Rp ${item.jumlah.toLocaleString('id-ID')}</span>
+                        </div>
                     `);
                 });
             });
         }
 
-        // Hitung total laba bersih di struk print
         let labaBersih = totalPemasukan - totalPengeluaran;
         ringkasanText.innerHTML = `
-            <div>Total Omset (Masuk): Rp ${totalPemasukan.toLocaleString('id-ID')}</div>
-            <div>Total Pengeluaran: Rp ${totalPengeluaran.toLocaleString('id-ID')}</div>
-            <div style="font-size:18px; margin-top:5px; color:#000;">💰 LABA BERSIH: Rp ${labaBersih.toLocaleString('id-ID')}</div>
+            <div>(+) Total Omset    : Rp ${totalPemasukan.toLocaleString('id-ID')}</div>
+            <div>(-) Pengeluaran    : Rp ${totalPengeluaran.toLocaleString('id-ID')}</div>
+            <div style="border-top:1px dashed #000; margin-top:5px; padding-top:5px; font-size:15px;">💰 LABA BERSIH : Rp ${labaBersih.toLocaleString('id-ID')}</div>
         `;
 
-        // Trigger perintah cetak browser
         window.print();
     }
 
-    muatDataTransaksiAdmin();
+    function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
+    jalankanLiveDashboardAdmin();
 </script>
 </body>
 </html>

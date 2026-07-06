@@ -13,9 +13,10 @@
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .box { padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 14px; }
         .in { background: #27ae60; } .out { background: #c0392b; }
-        .laba { grid-column: span 2; background: #2980b9; font-size: 18px; }
+        .laba { background: #2980b9; font-size: 16px; }
+        .laci-box { background: #d35400; font-size: 16px; }
         .val { display: block; font-size: 20px; margin-top: 5px; color: #fff; }
-        .laba .val { color: #f1c40f; font-size: 26px; }
+        .laba .val, .laci-box .val { color: #f1c40f; font-size: 22px; }
         .form-inline { display: flex; gap: 8px; margin-bottom: 15px; }
         .form-inline input, .form-inline select { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px; outline: none; }
         .btn-action { padding: 10px 15px; border: none; background: #f1c40f; color: #1a202c; font-weight: bold; border-radius: 8px; cursor: pointer; }
@@ -33,8 +34,6 @@
         .filter-box { background: #1a202c; border: 1px dashed #f1c40f; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
         .weekly-box { background: #2c3e50; border: 2px solid #2ecc71; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: center; }
         .label-filter { font-size: 12px; font-weight: bold; color: #cbd5e0; margin-bottom: 5px; display: block; }
-        
-        /* Notif Sukses Teks */
         .txt-sukses { display: block; font-size: 12px; color: #2ecc71; font-weight: bold; margin-top: -10px; margin-bottom: 10px; opacity: 0; transition: 0.3s; }
         .txt-download-sukses { display: block; font-size: 12px; color: #3498db; font-weight: bold; margin-top: 5px; opacity: 0; transition: 0.3s; text-align: center; }
     </style>
@@ -60,7 +59,6 @@
     <h3 style="font-size:14px; margin-bottom:8px; color:#2ecc71;">📊 DOWNLOAD LAPORAN EXCEL (.XLSX)</h3>
     <div style="display: flex; flex-direction: column; gap: 8px;">
         <button class="btn-action" style="background:#3498db; color:white; width:100%; padding:11px;" onclick="prosesDownloadExcelHarian()">📥 DOWNLOAD EXCEL DATA HARI INI</button>
-        
         <button class="btn-action" id="btn_cetak_mingguan" style="background:#2ecc71; color:white; width:100%; padding:11px;" onclick="prosesDownloadExcelMingguan()" disabled>🔄 Mengecek Hari...</button>
     </div>
     <span id="notif_download_sukses" class="txt-download-sukses">✓ Excel Berhasil Di-download!</span>
@@ -82,7 +80,8 @@
     <div class="grid">
         <div class="box in">🟢 OMSET MASUK<span class="val" id="adm_masuk">Rp 0</span></div>
         <div class="box out">🔴 PENGELUARAN<span class="val" id="adm_keluar">Rp 0</span></div>
-        <div class="box laba">💰 LABA BERSIH <span class="val" id="adm_laba">Rp 0</span></div>
+        <div class="box laba">💰 LABA BERSIH<span class="val" id="adm_laba">Rp 0</span></div>
+        <div class="box laci-box">🏪 UANG DI LACI KASIR<span class="val" id="adm_laci">Rp 0</span></div>
     </div>
 
     <h3 style="font-size: 14px; margin-bottom: 8px; color: #f1c40f;">📋 Alur Transaksi Pada Tanggal Ini:</h3>
@@ -107,6 +106,7 @@
     const FIREBASE_URL = "https://kasir-esteh-default-rtdb.asia-southeast1.firebasedatabase.app";
     let tanggalAktifAdmin = dapatkanTanggalHariIni();
     let dataGlobalTransaksiHarian = null;
+    let modalHariIniGlobal = 0;
 
     function dapatkanTanggalHariIni() {
         let s = new Date();
@@ -181,11 +181,8 @@
         }).then(() => { document.getElementById('admin_pesan_teks').value = ''; });
     }
 
-    // DOWNLOAD EXCEL HARIAN: Selalu aktif tanpa alert() pop-up
     function prosesDownloadExcelHarian() {
-        if (!dataGlobalTransaksiHarian) {
-            return;
-        }
+        if (!dataGlobalTransaksiHarian) return;
 
         let dataExcel = [
             ["LAPORAN TRANSAKSI HARIAN ES TEH & JERUK"],
@@ -204,9 +201,11 @@
         });
 
         dataExcel.push([]);
+        dataExcel.push(["MODAL AWAL TOKO", "", "", modalHariIniGlobal]);
         dataExcel.push(["TOTAL OMSET MASUK", "", "", totalMasuk]);
         dataExcel.push(["TOTAL PENGELUARAN", "", "", totalKeluar]);
         dataExcel.push(["LABA BERSIH HARIAN", "", "", totalMasuk - totalKeluar]);
+        dataExcel.push(["TOTAL HARUS ADA DI LACI", "", "", modalHariIniGlobal + (totalMasuk - totalKeluar)]);
 
         let wb = XLSX.utils.book_new();
         let ws = XLSX.utils.aoa_to_sheet(dataExcel);
@@ -214,7 +213,6 @@
 
         let namaFile = `Laporan_Harian_${tanggalAktifAdmin}.xlsx`;
         XLSX.writeFile(wb, namaFile);
-
         tampilkanTeksDownloadSukses();
     }
 
@@ -269,7 +267,6 @@
 
         let namaFile = `Laporan_Mingguan_${listTanggal[6]}.xlsx`;
         XLSX.writeFile(wb, namaFile);
-
         tampilkanTeksDownloadSukses();
     }
 
@@ -282,16 +279,18 @@
     function jalankanPantauLiveAdmin() {
         setInterval(() => {
             let inputKalender = document.getElementById('pilih_tanggal_admin').value;
-            
             if (tanggalAktifAdmin !== inputKalender) {
                 tanggalAktifAdmin = inputKalender;
                 renderTeksTanggal(tanggalAktifAdmin);
             }
 
+            fetch(`${FIREBASE_URL}/modal/${tanggalAktifAdmin}.json`).then(res => res.json()).then(m_nominal => {
+                modalHariIniGlobal = parseInt(m_nominal) || 0;
+            });
+
             fetch(`${FIREBASE_URL}/transaksi/${tanggalAktifAdmin}.json`).then(res => res.json()).then(data => {
                 let tabel = document.getElementById('adm_tabel'); tabel.innerHTML = '';
                 let totalP = 0, totalK = 0;
-                
                 dataGlobalTransaksiHarian = data;
 
                 if (!data) {
@@ -333,9 +332,13 @@
     }
 
     function updateDashboard(p, k) {
+        let labaBersih = p - k;
+        let uangDiLaci = modalHariIniGlobal + labaBersih;
+
         document.getElementById('adm_masuk').innerText = 'Rp ' + p.toLocaleString('id-ID');
         document.getElementById('adm_keluar').innerText = 'Rp ' + k.toLocaleString('id-ID');
-        document.getElementById('adm_laba').innerText = 'Rp ' + (p - k).toLocaleString('id-ID');
+        document.getElementById('adm_laba').innerText = 'Rp ' + labaBersih.toLocaleString('id-ID');
+        document.getElementById('adm_laci').innerText = 'Rp ' + uangDiLaci.toLocaleString('id-ID');
     }
 
     function logout() { sessionStorage.clear(); window.location.href = "index.html"; }

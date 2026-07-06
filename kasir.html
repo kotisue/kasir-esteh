@@ -332,4 +332,51 @@
             if (item.tipe === 'pemasukan') {
                 totalP += item.jumlah;
                 if (item.qty_detail) {
-                    tTB += item.qty
+                    tTB += item.qty_detail.teh_besar || 0;
+                    tTK += item.qty_detail.teh_kecil || 0;
+                    tJB += item.qty_detail.jeruk_besar || 0;
+                    tJK += item.qty_detail.jeruk_kecil || 0;
+                    tJOK += item.qty_detail.jeruk_ori_kecil || 0;
+                }
+            } else {
+                totalK += item.jumlah;
+            }
+        });
+
+        document.getElementById('st_teh_b').innerText = tTB + " Cup";
+        document.getElementById('st_teh_k').innerText = tTK + " Cup";
+        document.getElementById('st_jeruk_b').innerText = tJB + " Cup";
+        document.getElementById('st_jeruk_k').innerText = tJK + " Cup";
+        document.getElementById('st_jori_k').innerText = tJOK + " Cup";
+
+        document.getElementById('st_omset').innerText = "Rp " + totalP.toLocaleString('id-ID');
+        document.getElementById('st_keluar').innerText = "Rp " + totalK.toLocaleString('id-ID');
+        document.getElementById('st_laba').innerText = "Rp " + (totalP - totalK).toLocaleString('id-ID');
+
+        let catatan = document.getElementById('catatan_closing').value.trim();
+        document.getElementById('st_catatan_text').innerText = catatan === "" ? "-" : catatan;
+        document.getElementById('struk_tanggal').innerText = "Tanggal: " + tanggalAktif;
+
+        document.getElementById('konten_aplikasi_kasir').style.display = 'none';
+        document.getElementById('struk_closing').style.display = 'block';
+    }
+
+    function kirimClosingKeAdmin() {
+        let catatan = document.getElementById('catatan_closing').value.trim();
+        let payload = { waktu: dapatkanWaktu(), catatan: catatan === "" ? "Closing aman bos" : catatan };
+        fetch(`${FIREBASE_URL}/closing/${tanggalAktif}.json`, {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+        }).then(() => {
+            alert("Laporan closing sukses terkirim ke owner!");
+            document.getElementById('struk_closing').style.display = 'none';
+            document.getElementById('konten_aplikasi_kasir').style.display = 'flex';
+            document.getElementById('catatan_closing').value = '';
+        });
+    }
+
+    function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
+    jalankanPantauLiveKasir();
+</script>
+</body>
+</html>

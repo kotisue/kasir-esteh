@@ -27,7 +27,8 @@
         th { background: #4a5568; color: #f1c40f; position: sticky; top: 0; }
         .text-right { text-align: right; }
         .c-in { color: #2ecc71; font-weight: bold; } .c-out { color: #e74c3c; font-weight: bold; }
-        .btn-edit { background: #3498db; color: white; padding: 3px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        .btn-edit { background: #3498db; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; margin-right: 4px; }
+        .btn-hapus { background: #e74c3c; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; }
         .chat-area { max-height: 150px; overflow-y: auto; background: #1a202c; border: 1px solid #4a5568; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
         .chat-line { margin-bottom: 6px; } .chat-line.pegawai { color: #5dade2; } .chat-line.me { color: #f48fb1; text-align: right; }
         .closing-box { background: #e67e22; padding: 12px; border-radius: 8px; color: white; margin-bottom: 15px; font-size: 13px; font-weight: bold; border-left: 5px solid #d35400; }
@@ -87,7 +88,7 @@
     <h3 style="font-size: 14px; margin-bottom: 8px; color: #f1c40f;">📋 Alur Transaksi Pada Tanggal Ini:</h3>
     <div class="table-wrap" style="margin-bottom: 20px;">
         <table>
-            <thead><tr><th>Jam</th><th>Keterangan</th><th class="text-right">Jumlah</th><th style="text-align:center">Aksi</th></tr></thead>
+            <thead><tr><th>Jam</th><th>Keterangan</th><th class="text-right">Jumlah</th><th style="text-align:center; width:130px;">Aksi</th></tr></thead>
             <tbody id="adm_tabel"></tbody>
         </table>
     </div>
@@ -125,7 +126,6 @@
     function cekHariJumat() {
         let hariIni = new Date().getDay(); 
         let btn = document.getElementById('btn_cetak_mingguan');
-        
         if (hariIni === 5) { 
             btn.disabled = false;
             btn.innerText = "📥 DOWNLOAD EXCEL REKAP MINGGUAN (READY)";
@@ -159,15 +159,27 @@
         });
     }
 
+    // FITUR EDIT (Ditingkatkan agar memuat data lama otomatis)
     function editTransaksi(idTransaksi, ketLama, jmlLama) {
         let ketBaru = prompt("Edit Keterangan Penjualan:", ketLama);
+        if (ketBaru === null) return; // Jika batal
+        
         let jmlBaru = prompt("Edit Total Rupiah:", jmlLama);
-        if (ketBaru === null || jmlBaru === null) return;
+        if (jmlBaru === null) return; // Jika batal
         
         fetch(`${FIREBASE_URL}/transaksi/${tanggalAktifAdmin}/${idTransaksi}.json`, {
             method: 'PATCH',
             body: JSON.stringify({ keterangan: ketBaru, jumlah: parseInt(jmlBaru) || 0 })
         });
+    }
+
+    // FITUR HAPUS BARU
+    function hapusTransaksi(idTransaksi, keterangan) {
+        if (confirm(`Apakah Anda yakin ingin menghapus permanen transaksi "${keterangan}"?`)) {
+            fetch(`${FIREBASE_URL}/transaksi/${tanggalAktifAdmin}/${idTransaksi}.json`, {
+                method: 'DELETE'
+            });
+        }
     }
 
     function kirimChatAdmin() {
@@ -196,7 +208,6 @@
         Object.values(dataGlobalTransaksiHarian).forEach(item => {
             if (item.tipe === 'pemasukan') totalMasuk += item.jumlah;
             else if (item.tipe === 'pengeluaran') totalKeluar += item.jumlah;
-
             dataExcel.push([item.waktu, item.keterangan, item.tipe.toUpperCase(), item.jumlah]);
         });
 
@@ -219,7 +230,6 @@
     async function prosesDownloadExcelMingguan() {
         let listTanggal = [];
         let s = new Date();
-        
         for (let i = 6; i >= 0; i--) {
             let d = new Date();
             d.setDate(s.getDate() - i);
@@ -239,9 +249,7 @@
         for (let tgl of listTanggal) {
             let res = await fetch(`${FIREBASE_URL}/transaksi/${tgl}.json`);
             let data = await res.json();
-            
-            let omsetHariIni = 0;
-            let keluarHariIni = 0;
+            let omsetHariIni = 0, keluarHariIni = 0;
 
             if (data) {
                 Object.values(data).forEach(item => {
@@ -251,10 +259,7 @@
             }
 
             let labaHariIni = omsetHariIni - keluarHariIni;
-            grandOmset += omsetHariIni;
-            grandPengeluaran += keluarHariIni;
-            grandLaba += labaHariIni;
-
+            grandOmset += omsetHariIni; grandPengeluaran += keluarHariIni; grandLaba += labaHariIni;
             dataExcel.push([tgl, omsetHariIni, keluarHariIni, labaHariIni]);
         }
 
@@ -304,7 +309,10 @@
                             <td>${item.waktu}</td>
                             <td>${item.keterangan}</td>
                             <td class="text-right ${item.tipe==='pemasukan'?'c-in':'c-out'}">${item.tipe==='pemasukan'?'+':'-'} Rp ${item.jumlah.toLocaleString('id-ID')}</td>
-                            <td style="text-align:center;"><button class="btn-edit" onclick="editTransaksi('${id}', '${item.keterangan}', ${item.jumlah})">✏️ Edit</button></td>
+                            <td style="text-align:center; white-space: nowrap;">
+                                <button class="btn-edit" onclick="editTransaksi('${id}', '${item.keterangan}', ${item.jumlah})">✏️ Edit</button>
+                                <button class="btn-hapus" onclick="hapusTransaksi('${id}', '${item.keterangan}')">🗑️ Hapus</button>
+                            </td>
                         </tr>
                     `);
                 });
@@ -334,7 +342,6 @@
     function updateDashboard(p, k) {
         let labaBersih = p - k;
         let uangDiLaci = modalHariIniGlobal + labaBersih;
-
         document.getElementById('adm_masuk').innerText = 'Rp ' + p.toLocaleString('id-ID');
         document.getElementById('adm_keluar').innerText = 'Rp ' + k.toLocaleString('id-ID');
         document.getElementById('adm_laba').innerText = 'Rp ' + labaBersih.toLocaleString('id-ID');

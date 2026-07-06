@@ -200,7 +200,6 @@
 
     const FIREBASE_URL = "https://kasir-esteh-default-rtdb.asia-southeast1.firebasedatabase.app";
 
-    // Update Variabel Harga & Hapus item jeruk_ori_besar
     const harga = { teh_besar: 4000, teh_kecil: 3000, jeruk_besar: 7000, jeruk_kecil: 5000, jeruk_ori_kecil: 10000 };
     let logKeuangan = [];
     let modalHariIni = 0;
@@ -290,7 +289,6 @@
                 alert("Sistem Kasir Otomatis Membuka Hari Baru!");
             }
 
-            // 1. Pantau Transaksi
             fetch(`${FIREBASE_URL}/transaksi/${tanggalAktif}.json`).then(res => res.json()).then(data => {
                 let tabel = document.getElementById('tabel_riwayat'); tabel.innerHTML = '';
                 let totalP = 0, totalK = 0;
@@ -311,13 +309,11 @@
                 document.getElementById('box_laba_live').innerText = 'Rp ' + (totalP - totalK).toLocaleString('id-ID');
             });
 
-            // 2. Pantau Modal
             fetch(`${FIREBASE_URL}/modal/${tanggalAktif}.json`).then(res => res.json()).then(data => {
                 modalHariIni = data || 0;
                 document.getElementById('info_modal').innerText = "💰 Modal Hari Ini: Rp " + modalHariIni.toLocaleString('id-ID');
             });
 
-            // 3. Pantau Chat
             fetch(`${FIREBASE_URL}/chat/${tanggalAktif}.json`).then(res => res.json()).then(data => {
                 let box = document.getElementById('kotak_chat'); box.innerHTML = '';
                 if(data) {
@@ -332,5 +328,8 @@
 
     function prosesClosingHariIni() {
         let totalP = 0, totalK = 0, tTB = 0, tTK = 0, tJB = 0, tJK = 0, tJOK = 0;
-        logKeuangan.forEach(data => {
-        
+        logKeuangan.forEach(item => {
+            if (item.tipe === 'pemasukan') {
+                totalP += item.jumlah;
+                if (item.qty_detail) {
+                    tTB += item.qty_det

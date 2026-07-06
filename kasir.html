@@ -266,7 +266,7 @@
         let nom = parseInt(document.getElementById('nominal_pengeluaran').value) || 0;
         if (nama === "" || nom <= 0) return alert("Isi dengan benar!");
 
-        grid_out = { waktu: dapatkanWaktu(), tipe: 'pengeluaran', keterangan: nama, jumlah: nom };
+        let grid_out = { waktu: dapatkanWaktu(), tipe: 'pengeluaran', keterangan: nama, jumlah: nom };
         kirimKeFirebase(grid_out);
         document.getElementById('nama_pengeluaran').value = '';
         document.getElementById('nominal_pengeluaran').value = '';
@@ -332,4 +332,4 @@
             if (item.tipe === 'pemasukan') {
                 totalP += item.jumlah;
                 if (item.qty_detail) {
-                    tTB += item.qty_det
+                    tTB += item.qty

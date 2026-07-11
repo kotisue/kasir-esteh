@@ -57,7 +57,8 @@
 </head>
 <body>
 
-<div style="width: 100%; max-width: 480px; text-align: right;">
+<div style="width: 100%; max-width: 480px; display: flex; justify-content: space-between; align-items: center;">
+    <span id="label_nama_cabang" style="font-weight: bold; font-size: 13px; color: #2c3e50; background: #cbd5e0; padding: 4px 10px; border-radius: 20px;">Memuat Cabang...</span>
     <button onclick="logout()" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 11px; cursor: pointer;">Exit</button>
 </div>
 
@@ -125,7 +126,7 @@
         </div>
         <div class="action-buttons">
             <button class="btn btn-danger" onclick="resetKalkulator()">Clear</button>
-            <button class="btn btn-success" onclick="simpanPesanan()">Simpan Penjualan</button>
+            <button class="btn btn-success" id="btn_simpan_jual" onclick="simpanPesanan()">Simpan Penjualan</button>
         </div>
     </div>
 
@@ -191,7 +192,7 @@
     <div style="font-weight: bold; margin-bottom: 5px;">[📝 CATATAN PEGAWAI]</div>
     <div id="st_catatan_text" style="font-size: 12px; line-height: 1.4; color: #333;">-</div>
     <div class="struk-footer">
-        <button class="btn btn-danger" onclick="kirimClosingKeAdmin()">🚀 Kirim Laporan ke Admin</button>
+        <button class="btn btn-danger" id="btn_kirim_closing" onclick="kirimClosingKeAdmin()">🚀 Kirim Laporan ke Admin</button>
     </div>
 </div>
 
@@ -199,6 +200,8 @@
     if (sessionStorage.getItem('role') !== 'kasir') { window.location.href = "index.html"; }
 
     const FIREBASE_URL = "https://kasir-esteh-default-rtdb.asia-southeast1.firebasedatabase.app";
+    const ID_CABANG = sessionStorage.getItem('cabang') || 'cabang_1';
+    document.getElementById('label_nama_cabang').innerText = sessionStorage.getItem('nama_cabang') || 'Cabang Utama';
 
     const harga = { teh_besar: 4000, teh_kecil: 3000, jeruk_besar: 7000, jeruk_kecil: 5000, jeruk_ori_kecil: 10000 };
     let logKeuangan = [];
@@ -231,16 +234,13 @@
         return s.getFullYear() + "-" + (s.getMonth()+1).toString().padStart(2, '0') + "-" + s.getDate().toString().padStart(2, '0');
     }
 
-    function kirimKeFirebase(data) {
-        fetch(`${FIREBASE_URL}/transaksi/${tanggalAktif}.json`, {
-            method: 'POST',
-            body: JSON.stringify(data)
-        });
-    }
-
     function simpanPesanan() {
         let total = hitungTotal();
         if (total === 0) return alert("Pilih item dulu!");
+        
+        let btn = document.getElementById('btn_simpan_jual');
+        btn.disabled = true; btn.innerText = "Menyimpan...";
+
         let d = [];
         let qTB = parseInt(document.getElementById('teh_besar').value) || 0;
         let qTK = parseInt(document.getElementById('teh_kecil').value) || 0;
@@ -254,11 +254,21 @@
         if (qJK > 0) d.push(qJK + ' Jeruk(K)');
         if (qJOK > 0) d.push(qJOK + ' Jeruk Original');
 
-        kirimKeFirebase({
+        let payload = {
             waktu: dapatkanWaktu(), tipe: 'pemasukan', keterangan: d.join(', '), jumlah: total,
             qty_detail: { teh_besar: qTB, teh_kecil: qTK, jeruk_besar: qJB, jeruk_kecil: qJK, jeruk_ori_kecil: qJOK }
+        };
+
+        fetch(`${FIREBASE_URL}/${ID_CABANG}/transaksi/${tanggalAktif}.json`, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        }).then(() => {
+            btn.disabled = false; btn.innerText = "Simpan Penjualan";
+            resetKalkulator();
+        }).catch(() => {
+            alert("Gagal koneksi server!");
+            btn.disabled = false; btn.innerText = "Simpan Penjualan";
         });
-        resetKalkulator();
     }
 
     function simpanPengeluaran() {
@@ -267,15 +277,20 @@
         if (nama === "" || nom <= 0) return alert("Isi dengan benar!");
 
         let grid_out = { waktu: dapatkanWaktu(), tipe: 'pengeluaran', keterangan: nama, jumlah: nom };
-        kirimKeFirebase(grid_out);
-        document.getElementById('nama_pengeluaran').value = '';
-        document.getElementById('nominal_pengeluaran').value = '';
+        
+        fetch(`${FIREBASE_URL}/${ID_CABANG}/transaksi/${tanggalAktif}.json`, {
+            method: 'POST',
+            body: JSON.stringify(grid_out)
+        }).then(() => {
+            document.getElementById('nama_pengeluaran').value = '';
+            document.getElementById('nominal_pengeluaran').value = '';
+        });
     }
 
     function kirimChat() {
         let msg = document.getElementById('pesan_chat').value.trim();
         if (msg === "") return;
-        fetch(`${FIREBASE_URL}/chat/${tanggalAktif}.json`, {
+        fetch(`${FIREBASE_URL}/${ID_CABANG}/chat/${tanggalAktif}.json`, {
             method: 'POST',
             body: JSON.stringify({ pengirim: 'pegawai', waktu: dapatkanWaktu(), teks: msg })
         }).then(() => { document.getElementById('pesan_chat').value = ''; });
@@ -289,7 +304,7 @@
                 alert("Sistem Kasir Otomatis Membuka Hari Baru!");
             }
 
-            fetch(`${FIREBASE_URL}/transaksi/${tanggalAktif}.json`).then(res => res.json()).then(data => {
+            fetch(`${FIREBASE_URL}/${ID_CABANG}/transaksi/${tanggalAktif}.json`).then(res => res.json()).then(data => {
                 let tabel = document.getElementById('tabel_riwayat'); tabel.innerHTML = '';
                 let totalP = 0, totalK = 0;
                 if (!data) {
@@ -309,12 +324,12 @@
                 document.getElementById('box_laba_live').innerText = 'Rp ' + (totalP - totalK).toLocaleString('id-ID');
             });
 
-            fetch(`${FIREBASE_URL}/modal/${tanggalAktif}.json`).then(res => res.json()).then(data => {
+            fetch(`${FIREBASE_URL}/${ID_CABANG}/modal/${tanggalAktif}.json`).then(res => res.json()).then(data => {
                 modalHariIni = data || 0;
                 document.getElementById('info_modal').innerText = "💰 Modal Hari Ini: Rp " + modalHariIni.toLocaleString('id-ID');
             });
 
-            fetch(`${FIREBASE_URL}/chat/${tanggalAktif}.json`).then(res => res.json()).then(data => {
+            fetch(`${FIREBASE_URL}/${ID_CABANG}/chat/${tanggalAktif}.json`).then(res => res.json()).then(data => {
                 let box = document.getElementById('kotak_chat'); box.innerHTML = '';
                 if(data) {
                     Object.values(data).forEach(c => {
@@ -362,13 +377,18 @@
     }
 
     function kirimClosingKeAdmin() {
+        let btn = document.getElementById('btn_kirim_closing');
+        btn.disabled = true; btn.innerText = "Mengirim...";
+        
         let catatan = document.getElementById('catatan_closing').value.trim();
         let payload = { waktu: dapatkanWaktu(), catatan: catatan === "" ? "Closing aman bos" : catatan };
-        fetch(`${FIREBASE_URL}/closing/${tanggalAktif}.json`, {
+        
+        fetch(`${FIREBASE_URL}/${ID_CABANG}/closing/${tanggalAktif}.json`, {
             method: 'PUT',
             body: JSON.stringify(payload)
         }).then(() => {
             alert("Laporan closing sukses terkirim ke owner!");
+            btn.disabled = false; btn.innerText = "🚀 Kirim Laporan ke Admin";
             document.getElementById('struk_closing').style.display = 'none';
             document.getElementById('konten_aplikasi_kasir').style.display = 'flex';
             document.getElementById('catatan_closing').value = '';

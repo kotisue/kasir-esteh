@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Owner - Live Pantau</title>
+    <title>Dashboard Owner - Multi Cabang Live</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #1a202c; color: #fff; padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
         .wrapper, .admin-box { width: 100%; max-width: 600px; background: #2d3748; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         h2 { text-align: center; margin-bottom: 15px; color: #f1c40f; border-bottom: 2px solid #f1c40f; padding-bottom: 5px; }
+        
+        /* Tab Styles untuk Switcher Cabang */
+        .cabang-nav { display: flex; gap: 10px; width: 100%; max-width: 600px; margin-bottom: -5px; }
+        .tab-btn { flex: 1; padding: 12px; font-weight: bold; font-size: 14px; border: none; border-radius: 10px; cursor: pointer; background: #4a5568; color: #cbd5e0; transition: 0.2s; }
+        .tab-btn.active { background: #f1c40f; color: #1a202c; box-shadow: 0 4px 10px rgba(241, 196, 15, 0.3); }
+
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .box { padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 14px; }
         .in { background: #27ae60; } .out { background: #c0392b; }
@@ -45,8 +51,13 @@
     <button onclick="logout()" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
 </div>
 
-<div class="admin-box" style="margin-bottom: -5px;">
-    <h3 style="font-size:14px; margin-bottom:10px; color:#f1c40f;">INPUT MODAL AWAL TOKO (HARI INI)</h3>
+<div class="cabang-nav">
+    <button id="btn_tab_cabang_1" class="tab-btn active" onclick="gantiCabangAktif('cabang_1')">Cabang 1 (Utama)</button>
+    <button id="btn_tab_cabang_2" class="tab-btn" onclick="gantiCabangAktif('cabang_2')">Cabang 2 (Baru)</button>
+</div>
+
+<div class="admin-box">
+    <h3 style="font-size:14px; margin-bottom:10px; color:#f1c40f;" id="title_input_modal">INPUT MODAL AWAL TOKO CABANG 1 (HARI INI)</h3>
     <div class="form-inline">
         <input type="number" id="input_modal_nominal" placeholder="Masukkan Uang Modal Toko (Rp)...">
         <button class="btn-action" onclick="setUangModal()">Kirim Modal</button>
@@ -60,14 +71,14 @@
     <h3 style="font-size:14px; margin-bottom:8px; color:#2ecc71;">DOWNLOAD LAPORAN EXCEL</h3>
     <div style="display: flex; flex-direction: column; gap: 8px;">
         <button class="btn-action" style="background:#3498db; color:white; width:100%; padding:11px;" onclick="prosesDownloadExcelHarian()">DOWNLOAD EXCEL DATA HARI INI</button>
-        <button class="btn-action" id="btn_cetak_mingguan" style="background:#2ecc71; color:white; width:100%; padding:11px;" onclick="prosesDownloadExcelMingguan()" disabled>Mengecek Hari...</button>
+        <button class="btn-action" id="btn_cetak_mingguan" style="background:#4a5568; color:white; width:100%; padding:11px;" onclick="prosesDownloadExcelMingguan()" disabled>Mengecek Hari...</button>
     </div>
     <span id="notif_download_sukses" class="txt-download-sukses">Excel Berhasil Di-download!</span>
     <span id="info_hari_jumat" style="font-size:11px; color:#a0aec0; margin-top:5px; display:block;">Tombol biru aktif setiap saat. Tombol hijau hanya aktif hari Jumat untuk rekap 7 hari.</span>
 </div>
 
 <div class="wrapper">
-    <h2>MONITORING DASHBOARD OWNER</h2>
+    <h2 id="main_dashboard_title">MONITORING OWNER - CABANG 1</h2>
     
     <div class="filter-box">
         <span class="label-filter">LIHAT DATA TANGGAL:</span>
@@ -105,6 +116,7 @@
     if (sessionStorage.getItem('role') !== 'admin') { window.location.href = "index.html"; }
 
     const FIREBASE_URL = "https://kasir-esteh-default-rtdb.asia-southeast1.firebasedatabase.app";
+    let cabangAktif = "cabang_1"; // Default monitor cabang 1
     let tanggalAktifAdmin = dapatkanTanggalHariIni();
     let dataGlobalTransaksiHarian = null;
     let modalHariIniGlobal = 0;
@@ -138,6 +150,26 @@
     }
     cekHariJumat();
 
+    function gantiCabangAktif(namaCabang) {
+        cabangAktif = namaCabang;
+        
+        document.getElementById('btn_tab_cabang_1').classList.remove('active');
+        document.getElementById('btn_tab_cabang_2').classList.remove('active');
+        
+        if (namaCabang === 'cabang_1') {
+            document.getElementById('btn_tab_cabang_1').classList.add('active');
+            document.getElementById('main_dashboard_title').innerText = "MONITORING OWNER - CABANG 1";
+            document.getElementById('title_input_modal').innerText = "INPUT MODAL AWAL TOKO CABANG 1 (HARI INI)";
+        } else {
+            document.getElementById('btn_tab_cabang_2').classList.add('active');
+            document.getElementById('main_dashboard_title').innerText = "MONITORING OWNER - CABANG 2";
+            document.getElementById('title_input_modal').innerText = "INPUT MODAL AWAL TOKO CABANG 2 (HARI INI)";
+        }
+        
+        // Reset tabel sementara memuat cabang baru
+        document.getElementById('adm_tabel').innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">Memuat data cabang...</td></tr>';
+    }
+
     function gantiTanggalLaporan() {
         let tglPilihan = document.getElementById('pilih_tanggal_admin').value;
         if(tglPilihan) {
@@ -150,7 +182,7 @@
         let nominal = parseInt(document.getElementById('input_modal_nominal').value) || 0;
         if (nominal <= 0) return;
         let tglHariIni = dapatkanTanggalHariIni();
-        fetch(FIREBASE_URL + "/modal/" + tglHariIni + ".json", { method: 'PUT', body: JSON.stringify(nominal) })
+        fetch(`${FIREBASE_URL}/${cabangAktif}/modal/${tglHariIni}.json`, { method: 'PUT', body: JSON.stringify(nominal) })
         .then(function() { 
             document.getElementById('input_modal_nominal').value = '';
             let labelSukses = document.getElementById('notif_modal_sukses');
@@ -166,7 +198,7 @@
         let jmlBaru = prompt("Edit Total Rupiah:", jmlLama);
         if (jmlBaru === null) return;
         
-        fetch(FIREBASE_URL + "/transaksi/" + tanggalAktifAdmin + "/" + idTransaksi + ".json", {
+        fetch(`${FIREBASE_URL}/${cabangAktif}/transaksi/${tanggalAktifAdmin}/${idTransaksi}.json`, {
             method: 'PATCH',
             body: JSON.stringify({ keterangan: ketBaru, jumlah: parseInt(jmlBaru) || 0 })
         });
@@ -174,7 +206,7 @@
 
     function hapusTransaksi(idTransaksi, keterangan) {
         if (confirm("Apakah Anda yakin ingin menghapus permanen transaksi \"" + keterangan + "\"?")) {
-            fetch(FIREBASE_URL + "/transaksi/" + tanggalAktifAdmin + "/" + idTransaksi + ".json", {
+            fetch(`${FIREBASE_URL}/${cabangAktif}/transaksi/${tanggalAktifAdmin}/${idTransaksi}.json`, {
                 method: 'DELETE'
             });
         }
@@ -185,7 +217,7 @@
         if (msg === "") return;
         let s = new Date();
         let jam = s.getHours().toString().padStart(2, '0') + ':' + s.getMinutes().toString().padStart(2, '0');
-        fetch(FIREBASE_URL + "/chat/" + tanggalAktifAdmin + ".json", {
+        fetch(`${FIREBASE_URL}/${cabangAktif}/chat/${tanggalAktifAdmin}.json`, {
             method: 'POST',
             body: JSON.stringify({ pengirim: 'admin', waktu: jam, teks: msg })
         }).then(function() { document.getElementById('admin_pesan_teks').value = ''; });
@@ -195,7 +227,7 @@
         if (!dataGlobalTransaksiHarian) return;
 
         let dataExcel = [
-            ["LAPORAN TRANSAKSI HARIAN ES TEH & JERUK"],
+            [`LAPORAN TRANSAKSI HARIAN ES TEH & JERUK (${cabangAktif.toUpperCase()})`],
             ["Tanggal Laporan: " + tanggalAktifAdmin],
             [],
             ["Jam", "Keterangan Transaksi", "Tipe", "Jumlah Rupiah"]
@@ -220,7 +252,7 @@
         let ws = XLSX.utils.aoa_to_sheet(dataExcel);
         XLSX.utils.book_append_sheet(wb, ws, "Laporan Harian");
 
-        let namaFile = "Laporan_Harian_" + tanggalAktifAdmin + ".xlsx";
+        let namaFile = `Laporan_Harian_${cabangAktif}_${tanggalAktifAdmin}.xlsx`;
         XLSX.writeFile(wb, namaFile);
         tampilkanTeksDownloadSukses();
     }
@@ -236,7 +268,7 @@
         }
 
         let dataExcel = [
-            ["LAPORAN KEUANGAN MINGGUAN ES TEH & JERUK"],
+            [`LAPORAN KEUANGAN MINGGUAN ES TEH (${cabangAktif.toUpperCase()})`],
             ["Periode Rekap: " + listTanggal[0] + " s/d " + listTanggal[6]],
             [],
             ["Tanggal", "Omset Masuk", "Pengeluaran", "Laba Bersih"]
@@ -245,7 +277,7 @@
         let grandOmset = 0, grandPengeluaran = 0, grandLaba = 0;
 
         for (let tgl of listTanggal) {
-            let res = await fetch(FIREBASE_URL + "/transaksi/" + tgl + ".json");
+            let res = await fetch(`${FIREBASE_URL}/${cabangAktif}/transaksi/${tgl}.json`);
             let data = await res.json();
             let omsetHariIni = 0, keluarHariIni = 0;
 
@@ -268,7 +300,7 @@
         let ws = XLSX.utils.aoa_to_sheet(dataExcel);
         XLSX.utils.book_append_sheet(wb, ws, "Ringkasan Mingguan");
 
-        let namaFile = "Laporan_Mingguan_" + listTanggal[6] + ".xlsx";
+        let namaFile = `Laporan_Mingguan_${cabangAktif}_${listTanggal[6]}.xlsx`;
         XLSX.writeFile(wb, namaFile);
         tampilkanTeksDownloadSukses();
     }
@@ -281,18 +313,18 @@
 
     function jalankanPantauLiveAdmin() {
         setInterval(function() {
+            // FIX BUG: Sinkronisasi tanggal dari input secara aman tanpa mereset otomatis
             let inputKalender = document.getElementById('pilih_tanggal_admin').value;
-            if (tanggalAktifAdmin !== inputKalender) {
-                tanggalAktifAdmin = inputKalender;
-                renderTeksTanggal(tanggalAktifAdmin);
+            if (inputKalender && tanggalAktifAdmin !== inputKalender) {
+                // Hanya mengizinkan sinkronisasi jika diubah manual dari filter tanggal
             }
 
-            fetch(FIREBASE_URL + "/modal/" + tanggalAktifAdmin + ".json").then(function(res) { return res.json(); }).then(function(m_nominal) {
+            fetch(`${FIREBASE_URL}/${cabangAktif}/modal/${tanggalAktifAdmin}.json`).then(res => res.json()).then(m_nominal => {
                 modalHariIniGlobal = parseInt(m_nominal) || 0;
             });
 
-            fetch(FIREBASE_URL + "/transaksi/" + tanggalAktifAdmin + ".json").then(function(res) { return res.json(); }).then(function(data) {
-                let tabel = document.getElementById('adm_tabel'); tabel.innerHTML = '';
+            fetch(`${FIREBASE_URL}/${cabangAktif}/transaksi/${tanggalAktifAdmin}.json`).then(res => res.json()).then(data => {
+                let tabel = document.getElementById('adm_tabel');
                 let totalP = 0, totalK = 0;
                 dataGlobalTransaksiHarian = data;
 
@@ -300,6 +332,8 @@
                     tabel.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">Tidak ada riwayat transaksi pada tanggal ini.</td></tr>';
                     updateDashboard(0, 0); return;
                 }
+                
+                tabel.innerHTML = '';
                 Object.entries(data).reverse().forEach(function([id, item]) {
                     if (item.tipe === 'pemasukan') totalP += item.jumlah; else totalK += item.jumlah;
                     tabel.insertAdjacentHTML('beforeend', `
@@ -317,7 +351,7 @@
                 updateDashboard(totalP, totalK);
             });
 
-            fetch(FIREBASE_URL + "/closing/" + tanggalAktifAdmin + ".json").then(function(res) { return res.json(); }).then(function(data) {
+            fetch(`${FIREBASE_URL}/${cabangAktif}/closing/${tanggalAktifAdmin}.json`).then(res => res.json()).then(data => {
                 let boxNotif = document.getElementById('notif_closing_box');
                 if (data) {
                     boxNotif.style.display = 'block';
@@ -325,7 +359,7 @@
                 } else { boxNotif.style.display = 'none'; }
             });
 
-            fetch(FIREBASE_URL + "/chat/" + tanggalAktifAdmin + ".json").then(function(res) { return res.json(); }).then(function(data) {
+            fetch(`${FIREBASE_URL}/${cabangAktif}/chat/${tanggalAktifAdmin}.json`).then(res => res.json()).then(data => {
                 let box = document.getElementById('admin_chat_box'); box.innerHTML = '';
                 if(data) {
                     Object.values(data).forEach(function(c) {

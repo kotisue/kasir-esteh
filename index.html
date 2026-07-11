@@ -3,68 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Sistem Kasir Multicabang</title>
+    <title>Login Sistem Kasir Es Teh</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f0f3f5; height: 100vh; display: flex; justify-content: center; align-items: center; padding: 12px; }
-        .login-container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); width: 100%; max-width: 360px; text-align: center; }
-        h2 { color: #2c3e50; margin-bottom: 20px; font-size: 22px; }
-        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; text-align: left; }
+        body { background-color: #f0f3f5; display: flex; justify-content: center; align-items: center; height: 100vh; padding: 15px; }
+        .login-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); width: 100%; max-width: 380px; }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; font-size: 22px; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; }
         .form-group label { font-size: 13px; font-weight: bold; color: #4a5568; }
         .form-group input { padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 14px; outline: none; }
-        .btn-login { width: 100%; padding: 12px; background: #2c3e50; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .error-msg { color: #e74c3c; font-size: 13px; margin-top: 10px; display: none; font-weight: bold; }
-        .info-hint { font-size: 11px; color: #718096; margin-top: 15px; text-align: left; line-height: 1.4; }
+        .form-group input:focus { border-color: #3498db; }
+        .btn-login { width: 100%; padding: 12px; background: #3498db; border: none; color: white; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 5px; transition: 0.2s; }
+        .btn-login:hover { background: #2980b9; }
+        .error-msg { color: #e74c3c; font-size: 13px; text-align: center; margin-top: 10px; display: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="login-container">
-    <h2>🔒 Login Kasir & Admin</h2>
+    <h2>🔐 Login Aplikasi</h2>
     <div class="form-group">
         <label>Username</label>
-        <input type="text" id="username" placeholder="Masukkan username">
+        <input type="text" id="username" placeholder="Masukkan username...">
     </div>
     <div class="form-group">
         <label>Password</label>
-        <input type="password" id="password" placeholder="Masukkan password">
+        <input type="password" id="password" placeholder="Masukkan password...">
     </div>
-    <button class="btn-login" onclick="cekLogin()">Masuk Aplikasi</button>
+    <button class="btn-login" onclick="prosesLogin()">Masuk Sistem</button>
     <div class="error-msg" id="pesan_error">Username atau Password Salah!</div>
-
-    <div class="info-hint">
-        <b>Kredensial Akses:</b><br>
-        • Admin: admin / admin123<br>
-        • Cabang 1: kasir1 / esteh123<br>
-        • Cabang 2: kasir2 / esteh456
-    </div>
 </div>
 
 <script>
-    function cekLogin() {
-        let userIn = document.getElementById('username').value.trim();
-        let passIn = document.getElementById('password').value;
-        let errorBox = document.getElementById('pesan_error');
+    function prosesLogin() {
+        const userIn = document.getElementById('username').value.trim();
+        const passIn = document.getElementById('password').value.trim();
+        const errLabel = document.getElementById('pesan_error');
+        
+        errLabel.style.display = "none";
 
-        errorBox.style.display = 'none';
-
-        if (userIn === "kasir1" && passIn === "esteh123") {
+        // Validasi Multi-User sesuai request terbaru
+        if (userIn === "kasir1" && passIn === "tehmanis") {
             sessionStorage.setItem('role', 'kasir');
             sessionStorage.setItem('cabang', 'cabang_1');
             sessionStorage.setItem('nama_cabang', 'Cabang 1 (Utama)');
             window.location.href = "kasir.html";
-        } else if (userIn === "kasir2" && passIn === "esteh456") {
+        } 
+        else if (userIn === "kasir2" && passIn === "estehsegar") {
             sessionStorage.setItem('role', 'kasir');
             sessionStorage.setItem('cabang', 'cabang_2');
-            sessionStorage.setItem('nama_cabang', 'Cabang 2 (Baru)');
+            sessionStorage.setItem('nama_cabang', 'Cabang 2');
             window.location.href = "kasir.html";
-        } else if (userIn === "admin" && passIn === "admin123") {
+        } 
+        else if (userIn === "admin" && passIn === "admin123") {
             sessionStorage.setItem('role', 'admin');
             window.location.href = "admin.html";
-        } else {
-            errorBox.style.display = 'block';
+        } 
+        else {
+            errLabel.style.display = "block";
         }
     }
+
+    // Shortcut Enter untuk mempermudah login kasir
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { prosesLogin(); }
+    });
 </script>
 </body>
 </html>

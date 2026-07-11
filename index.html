@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Sistem Kasir</title>
+    <title>Login Sistem Kasir Multicabang</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f0f3f5; height: 100vh; display: flex; justify-content: center; align-items: center; padding: 12px; }
@@ -14,6 +14,7 @@
         .form-group input { padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 14px; outline: none; }
         .btn-login { width: 100%; padding: 12px; background: #2c3e50; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .error-msg { color: #e74c3c; font-size: 13px; margin-top: 10px; display: none; font-weight: bold; }
+        .info-hint { font-size: 11px; color: #718096; margin-top: 15px; text-align: left; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -30,6 +31,13 @@
     </div>
     <button class="btn-login" onclick="cekLogin()">Masuk Aplikasi</button>
     <div class="error-msg" id="pesan_error">Username atau Password Salah!</div>
+
+    <div class="info-hint">
+        <b>Kredensial Akses:</b><br>
+        • Admin: admin / admin123<br>
+        • Cabang 1: kasir1 / esteh123<br>
+        • Cabang 2: kasir2 / esteh456
+    </div>
 </div>
 
 <script>
@@ -38,11 +46,17 @@
         let passIn = document.getElementById('password').value;
         let errorBox = document.getElementById('pesan_error');
 
-        // Sembunyikan pesan error dulu setiap kali tombol ditekan
         errorBox.style.display = 'none';
 
-        if (userIn === "kasir" && passIn === "esteh123") {
+        if (userIn === "kasir1" && passIn === "esteh123") {
             sessionStorage.setItem('role', 'kasir');
+            sessionStorage.setItem('cabang', 'cabang_1');
+            sessionStorage.setItem('nama_cabang', 'Cabang 1 (Utama)');
+            window.location.href = "kasir.html";
+        } else if (userIn === "kasir2" && passIn === "esteh456") {
+            sessionStorage.setItem('role', 'kasir');
+            sessionStorage.setItem('cabang', 'cabang_2');
+            sessionStorage.setItem('nama_cabang', 'Cabang 2 (Baru)');
             window.location.href = "kasir.html";
         } else if (userIn === "admin" && passIn === "admin123") {
             sessionStorage.setItem('role', 'admin');

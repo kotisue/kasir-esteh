@@ -24,7 +24,7 @@
         .laba .val, .laci-box .val { color: #f1c40f; font-size: 22px; }
         
         .form-inline { display: flex; gap: 8px; margin-bottom: 15px; }
-        .form-inline input { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px; outline: none; }
+        .form-inline input { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px; outline: none; color: #000; }
         .btn-action { padding: 10px 15px; border: none; background: #f1c40f; color: #1a202c; font-weight: bold; border-radius: 8px; cursor: pointer; }
         .btn-action:disabled { background: #4a5568; color: #718096; cursor: not-allowed; }
         
@@ -74,7 +74,7 @@
 <div class="weekly-box" id="box_mingguan">
     <h3 style="font-size:14px; margin-bottom:8px; color:#2ecc71;">DOWNLOAD LAPORAN EXCEL</h3>
     <div style="display: flex; flex-direction: column; gap: 8px;">
-        <button class="btn-action" style="background:#3498db; color:white; width:100%; padding:11px;" onclick="prosesDownloadExcelHarian()">DOWNLOAD EXCEL DATA HARI INI</button>
+        <button class="btn-action" style="background:#3498db; color:white; width:100%; padding:11px;" onclick="prosesDownloadExcelHarian()">DOWNLOAD EXCEL DATA HARIAN</button>
         <button class="btn-action" id="btn_cetak_mingguan" style="background:#4a5568; color:white; width:100%; padding:11px;" onclick="prosesDownloadExcelMingguan()" disabled>Mengecek Hari...</button>
     </div>
     <span id="notif_download_sukses" class="txt-download-sukses">Excel Berhasil Di-download!</span>
@@ -170,7 +170,7 @@
             document.getElementById('title_input_modal').innerText = "INPUT MODAL AWAL TOKO CABANG 2 (HARI INI)";
         }
         
-        document.getElementById('adm_tabel').innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">Memuat data cabang...</td></tr>';
+        muatDataAdmin();
     }
 
     function gantiTanggalLaporan() {
@@ -178,6 +178,7 @@
         if(tglPilihan) {
             tanggalAktifAdmin = tglPilihan;
             renderTeksTanggal(tanggalAktifAdmin);
+            muatDataAdmin();
         }
     }
 
@@ -191,6 +192,7 @@
             let labelSukses = document.getElementById('notif_modal_sukses');
             labelSukses.style.opacity = "1";
             setTimeout(function() { labelSukses.style.opacity = "0"; }, 3000);
+            muatDataAdmin();
         });
     }
 
@@ -204,14 +206,14 @@
         fetch(`${FIREBASE_URL}/${cabangAktif}/transaksi/${tanggalAktifAdmin}/${idTransaksi}.json`, {
             method: 'PATCH',
             body: JSON.stringify({ keterangan: ketBaru, jumlah: parseInt(jmlBaru) || 0 })
-        });
+        }).then(() => muatDataAdmin());
     }
 
     function hapusTransaksi(idTransaksi, keterangan) {
         if (confirm("Apakah Anda yakin ingin menghapus permanen transaksi \"" + keterangan + "\"?")) {
             fetch(`${FIREBASE_URL}/${cabangAktif}/transaksi/${tanggalAktifAdmin}/${idTransaksi}.json`, {
                 method: 'DELETE'
-            });
+            }).then(() => muatDataAdmin());
         }
     }
 
@@ -223,14 +225,23 @@
         fetch(`${FIREBASE_URL}/${cabangAktif}/chat/${tanggalAktifAdmin}.json`, {
             method: 'POST',
             body: JSON.stringify({ pengirim: 'admin', waktu: jam, teks: msg })
-        }).then(function() { document.getElementById('admin_pesan_teks').value = ''; });
+        }).then(function() { 
+            document.getElementById('admin_pesan_teks').value = ''; 
+            muatChatAdmin();
+        });
+    }
+
+    function tampilkanTeksDownloadSukses() {
+        let notif = document.getElementById('notif_download_sukses');
+        notif.style.opacity = "1";
+        setTimeout(() => notif.style.opacity = "0", 3000);
     }
 
     function prosesDownloadExcelHarian() {
-        if (!dataGlobalTransaksiHarian) { alert("Tidak ada data transaksi untuk di-download."); return; }
+        if (!dataGlobalTransaksiHarian) { alert("Tidak ada data transaksi pada tanggal ini untuk di-download."); return; }
 
         let dataExcel = [
-            [`LAPORAN TRANSAKSI HARIAN ES TEH (${cabangAktif.toUpperCase()})`],
+            [`LAPORAN TRANSAKSI ES TEH (${cabangAktif.toUpperCase()})`],
             ["Tanggal Laporan: " + tanggalAktifAdmin],
             [],
             ["Jam", "Keterangan Transaksi", "Tipe", "Jumlah Rupiah"]
@@ -295,117 +306,124 @@
             }
 
             let labaHariIni = omsetHariIni - keluarHariIni;
-            grandOmset += omsetHariIni; grandPengeluaran += keluarHariIni; grandLaba += labaHariIni;
+            grandOmset += omsetHariIni;
+            grandPengeluaran += keluarHariIni;
+            grandLaba += labaHariIni;
+
             dataExcel.push([tgl, omsetHariIni, keluarHariIni, labaHariIni]);
         }
 
         dataExcel.push([]);
-        dataExcel.push(["TOTAL SEMINGGU", grandOmset, grandPengeluaran, grandLaba]);
+        dataExcel.push(["GRAND TOTAL MINGGUAN", grandOmset, grandPengeluaran, grandLaba]);
 
         let wb = XLSX.utils.book_new();
         let ws = XLSX.utils.aoa_to_sheet(dataExcel);
-        XLSX.utils.book_append_sheet(wb, ws, "Ringkasan Mingguan");
+        XLSX.utils.book_append_sheet(wb, ws, "Rekap Mingguan");
 
-        let namaFile = `Laporan_Mingguan_${cabangAktif}_${listTanggal[6]}.xlsx`;
+        let namaFile = `Rekap_Mingguan_${cabangAktif}_${listTanggal[6]}.xlsx`;
         XLSX.writeFile(wb, namaFile);
         tampilkanTeksDownloadSukses();
     }
 
-    function tampilkanTeksDownloadSukses() {
-        let lbl = document.getElementById('notif_download_sukses');
-        lbl.style.opacity = "1";
-        setTimeout(function() { lbl.style.opacity = "0"; }, 3000);
-    }
+    function muatDataAdmin() {
+        // Fetch Modal
+        fetch(`${FIREBASE_URL}/${cabangAktif}/modal/${tanggalAktifAdmin}.json`)
+        .then(res => res.json())
+        .then(m => {
+            modalHariIniGlobal = parseInt(m) || 0;
+            return fetch(`${FIREBASE_URL}/${cabangAktif}/transaksi/${tanggalAktifAdmin}.json`);
+        })
+        .then(res => res.json())
+        .then(data => {
+            dataGlobalTransaksiHarian = data;
+            let tbl = document.getElementById('adm_tabel');
+            let totalMasuk = 0, totalKeluar = 0;
 
-    function jalankanPantauLiveAdmin() {
-        setInterval(function() {
-            // Fetch Uang Modal
-            fetch(`${FIREBASE_URL}/${cabangAktif}/modal/${tanggalAktifAdmin}.json`)
-            .then(res => res.json())
-            .then(m_nominal => {
-                modalHariIniGlobal = parseInt(m_nominal) || 0;
-            });
-
-            // Fetch Transaksi
-            fetch(`${FIREBASE_URL}/${cabangAktif}/transaksi/${tanggalAktifAdmin}.json`)
-            .then(res => res.json())
-            .then(data => {
-                let tabel = document.getElementById('adm_tabel');
-                let totalP = 0, totalK = 0;
-                dataGlobalTransaksiHarian = data;
-
-                if (!data) {
-                    tabel.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">Tidak ada riwayat transaksi pada tanggal ini.</td></tr>';
-                    updateDashboard(0, 0); 
-                    return;
-                }
-                
-                tabel.innerHTML = '';
-                Object.entries(data).reverse().forEach(function([id, item]) {
+            if (!data) {
+                tbl.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">Belum ada transaksi pada tanggal ini.</td></tr>';
+            } else {
+                tbl.innerHTML = '';
+                Object.keys(data).reverse().forEach(key => {
+                    let item = data[key];
                     let jml = item.jumlah || 0;
-                    if (item.tipe === 'pemasukan') totalP += jml; else totalK += jml;
-                    tabel.insertAdjacentHTML('beforeend', `
+
+                    if (item.tipe === 'pemasukan') totalMasuk += jml;
+                    else if (item.tipe === 'pengeluaran') totalKeluar += jml;
+
+                    tbl.insertAdjacentHTML('beforeend', `
                         <tr>
                             <td>${item.waktu || '-'}</td>
                             <td>${item.keterangan || '-'}</td>
-                            <td class="text-right ${item.tipe==='pemasukan'?'c-in':'c-out'}">${item.tipe==='pemasukan'?'+':'-'} Rp ${jml.toLocaleString('id-ID')}</td>
-                            <td style="text-align:center; white-space: nowrap;">
-                                <button class="btn-edit" onclick="editTransaksi('${id}', '${item.keterangan}', ${jml})">Edit</button>
-                                <button class="btn-hapus" onclick="hapusTransaksi('${id}', '${item.keterangan}')">Hapus</button>
+                            <td class="text-right ${item.tipe === 'pemasukan' ? 'c-in' : 'c-out'}">
+                                ${item.tipe === 'pemasukan' ? '+' : '-'} Rp ${jml.toLocaleString('id-ID')}
+                            </td>
+                            <td style="text-align:center;">
+                                <button class="btn-edit" onclick="editTransaksi('${key}', '${item.keterangan}', ${jml})">Edit</button>
+                                <button class="btn-hapus" onclick="hapusTransaksi('${key}', '${item.keterangan}')">Hapus</button>
                             </td>
                         </tr>
                     `);
                 });
-                updateDashboard(totalP, totalK);
-            });
+            }
 
-            // Fetch Closing Notification
-            fetch(`${FIREBASE_URL}/${cabangAktif}/closing/${tanggalAktifAdmin}.json`)
-            .then(res => res.json())
-            .then(data => {
-                let boxNotif = document.getElementById('notif_closing_box');
-                if (data) {
-                    boxNotif.style.display = 'block';
-                    document.getElementById('notif_closing_text').innerHTML = "Jam: " + (data.waktu || '-') + " <br> <b>Catatan Pegawai:</b> " + (data.catatan || '-');
-                } else { boxNotif.style.display = 'none'; }
-            });
+            let labaBersih = totalMasuk - totalKeluar;
+            let laci = modalHariIniGlobal + labaBersih;
 
-            // Fetch Chat Obrolan
-            fetch(`${FIREBASE_URL}/${cabangAktif}/chat/${tanggalAktifAdmin}.json`)
-            .then(res => res.json())
-            .then(data => {
-                let box = document.getElementById('admin_chat_box'); 
-                box.innerHTML = '';
-                if(data) {
-                    Object.values(data).forEach(function(c) {
-                        let textMsg = c.teks || c.pesan || c.text || '';
-                        let isPegawai = c.pengirim === 'pegawai';
-                        box.insertAdjacentHTML('beforeend', `
-                            <div class="chat-line ${isPegawai ? 'pegawai' : 'me'}">
-                                <b>${isPegawai ? 'Pegawai' : 'Anda'} [${c.waktu || ''}]:</b> ${textMsg}
-                            </div>
-                        `);
-                    });
-                    box.scrollTop = box.scrollHeight;
-                } else { 
-                    box.innerHTML = '<center style="color:#777; font-size:12px;">Tidak ada obrolan.</center>'; 
-                }
-            });
-        }, 3000);
+            document.getElementById('adm_masuk').innerText = "Rp " + totalMasuk.toLocaleString('id-ID');
+            document.getElementById('adm_keluar').innerText = "Rp " + totalKeluar.toLocaleString('id-ID');
+            document.getElementById('adm_laba').innerText = "Rp " + labaBersih.toLocaleString('id-ID');
+            document.getElementById('adm_laci').innerText = "Rp " + laci.toLocaleString('id-ID');
+        });
+
+        // Cek Closing Laporan
+        fetch(`${FIREBASE_URL}/${cabangAktif}/closing/${tanggalAktifAdmin}.json`)
+        .then(res => res.json())
+        .then(c => {
+            let box = document.getElementById('notif_closing_box');
+            if (c) {
+                box.style.display = 'block';
+                document.getElementById('notif_closing_text').innerText = `[Jam ${c.waktu}] Catatan Kasir: "${c.catatan}"`;
+            } else {
+                box.style.display = 'none';
+            }
+        });
     }
 
-    function updateDashboard(p, k) {
-        let labaBersih = p - k;
-        let uangDiLaci = modalHariIniGlobal + labaBersih;
-        document.getElementById('adm_masuk').innerText = 'Rp ' + p.toLocaleString('id-ID');
-        document.getElementById('adm_keluar').innerText = 'Rp ' + k.toLocaleString('id-ID');
-        document.getElementById('adm_laba').innerText = 'Rp ' + labaBersih.toLocaleString('id-ID');
-        document.getElementById('adm_laci').innerText = 'Rp ' + uangDiLaci.toLocaleString('id-ID');
+    function muatChatAdmin() {
+        fetch(`${FIREBASE_URL}/${cabangAktif}/chat/${tanggalAktifAdmin}.json`)
+        .then(res => res.json())
+        .then(data => {
+            let box = document.getElementById('admin_chat_box');
+            box.innerHTML = '';
+            if (data) {
+                Object.values(data).forEach(c => {
+                    let sender = c.pengirim === 'admin' ? 'Saya' : 'Pegawai';
+                    let css = c.pengirim === 'admin' ? 'me' : 'pegawai';
+                    box.insertAdjacentHTML('beforeend', `
+                        <div class="chat-line ${css}">
+                            <b>${sender} [${c.waktu || ''}]:</b> ${c.teks || ''}
+                        </div>
+                    `);
+                });
+                box.scrollTop = box.scrollHeight;
+            } else {
+                box.innerHTML = '<center style="color:#aaa; font-size:11px;">Belum ada pesan obrolan.</center>';
+            }
+        });
     }
 
-    function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
-    
-    jalankanPantauLiveAdmin();
+    function logout() {
+        sessionStorage.clear();
+        window.location.href = "index.html";
+    }
+
+    setInterval(() => {
+        muatDataAdmin();
+        muatChatAdmin();
+    }, 3000);
+
+    muatDataAdmin();
+    muatChatAdmin();
 </script>
 </body>
 </html>

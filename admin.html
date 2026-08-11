@@ -11,7 +11,6 @@
         .wrapper, .admin-box { width: 100%; max-width: 600px; background: #2d3748; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         h2 { text-align: center; margin-bottom: 15px; color: #f1c40f; border-bottom: 2px solid #f1c40f; padding-bottom: 5px; }
         
-        /* Tab Styles untuk Switcher Cabang */
         .cabang-nav { display: flex; gap: 10px; width: 100%; max-width: 600px; margin-bottom: -5px; }
         .tab-btn { flex: 1; padding: 12px; font-weight: bold; font-size: 14px; border: none; border-radius: 10px; cursor: pointer; background: #4a5568; color: #cbd5e0; transition: 0.2s; }
         .tab-btn.active { background: #f1c40f; color: #1a202c; box-shadow: 0 4px 10px rgba(241, 196, 15, 0.3); }
@@ -23,20 +22,25 @@
         .laci-box { background: #d35400; font-size: 16px; }
         .val { display: block; font-size: 20px; margin-top: 5px; color: #fff; }
         .laba .val, .laci-box .val { color: #f1c40f; font-size: 22px; }
+        
         .form-inline { display: flex; gap: 8px; margin-bottom: 15px; }
-        .form-inline input, .form-inline select { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px; outline: none; }
+        .form-inline input { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px; outline: none; }
         .btn-action { padding: 10px 15px; border: none; background: #f1c40f; color: #1a202c; font-weight: bold; border-radius: 8px; cursor: pointer; }
         .btn-action:disabled { background: #4a5568; color: #718096; cursor: not-allowed; }
+        
         .table-wrap { background: #1a202c; border-radius: 8px; padding: 10px; max-height: 300px; overflow-y: auto; border: 1px solid #4a5568; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
         th, td { padding: 10px; border-bottom: 1px solid #4a5568; }
         th { background: #4a5568; color: #f1c40f; position: sticky; top: 0; }
         .text-right { text-align: right; }
         .c-in { color: #2ecc71; font-weight: bold; } .c-out { color: #e74c3c; font-weight: bold; }
+        
         .btn-edit { background: #3498db; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; margin-right: 4px; }
         .btn-hapus { background: #e74c3c; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        
         .chat-area { max-height: 150px; overflow-y: auto; background: #1a202c; border: 1px solid #4a5568; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
         .chat-line { margin-bottom: 6px; } .chat-line.pegawai { color: #5dade2; } .chat-line.me { color: #f48fb1; text-align: right; }
+        
         .closing-box { background: #e67e22; padding: 12px; border-radius: 8px; color: white; margin-bottom: 15px; font-size: 13px; font-weight: bold; border-left: 5px solid #d35400; }
         .filter-box { background: #1a202c; border: 1px dashed #f1c40f; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
         .weekly-box { background: #2c3e50; border: 2px solid #2ecc71; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: center; }
@@ -48,7 +52,7 @@
 <body>
 
 <div style="width: 100%; max-width: 600px; text-align: right;">
-    <button onclick="logout()" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+    <button onclick="logout()" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Logout</button>
 </div>
 
 <div class="cabang-nav">
@@ -116,7 +120,7 @@
     if (sessionStorage.getItem('role') !== 'admin') { window.location.href = "index.html"; }
 
     const FIREBASE_URL = "https://kasir-esteh-default-rtdb.asia-southeast1.firebasedatabase.app";
-    let cabangAktif = "cabang_1"; // Default monitor cabang 1
+    let cabangAktif = "cabang_1";
     let tanggalAktifAdmin = dapatkanTanggalHariIni();
     let dataGlobalTransaksiHarian = null;
     let modalHariIniGlobal = 0;
@@ -166,7 +170,6 @@
             document.getElementById('title_input_modal').innerText = "INPUT MODAL AWAL TOKO CABANG 2 (HARI INI)";
         }
         
-        // Reset tabel sementara memuat cabang baru
         document.getElementById('adm_tabel').innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">Memuat data cabang...</td></tr>';
     }
 
@@ -224,10 +227,10 @@
     }
 
     function prosesDownloadExcelHarian() {
-        if (!dataGlobalTransaksiHarian) return;
+        if (!dataGlobalTransaksiHarian) { alert("Tidak ada data transaksi untuk di-download."); return; }
 
         let dataExcel = [
-            [`LAPORAN TRANSAKSI HARIAN ES TEH & JERUK (${cabangAktif.toUpperCase()})`],
+            [`LAPORAN TRANSAKSI HARIAN ES TEH (${cabangAktif.toUpperCase()})`],
             ["Tanggal Laporan: " + tanggalAktifAdmin],
             [],
             ["Jam", "Keterangan Transaksi", "Tipe", "Jumlah Rupiah"]
@@ -236,9 +239,12 @@
         let totalMasuk = 0, totalKeluar = 0;
 
         Object.values(dataGlobalTransaksiHarian).forEach(function(item) {
-            if (item.tipe === 'pemasukan') totalMasuk += item.jumlah;
-            else if (item.tipe === 'pengeluaran') totalKeluar += item.jumlah;
-            dataExcel.push([item.waktu, item.keterangan, item.tipe.toUpperCase(), item.jumlah]);
+            let tipeText = item.tipe ? item.tipe.toUpperCase() : 'PEMASUKAN';
+            let jml = item.jumlah || 0;
+            if (item.tipe === 'pemasukan') totalMasuk += jml;
+            else if (item.tipe === 'pengeluaran') totalKeluar += jml;
+            
+            dataExcel.push([item.waktu || '-', item.keterangan || '-', tipeText, jml]);
         });
 
         dataExcel.push([]);
@@ -283,8 +289,8 @@
 
             if (data) {
                 Object.values(data).forEach(function(item) {
-                    if (item.tipe === 'pemasukan') omsetHariIni += item.jumlah;
-                    else if (item.tipe === 'pengeluaran') keluarHariIni += item.jumlah;
+                    if (item.tipe === 'pemasukan') omsetHariIni += (item.jumlah || 0);
+                    else if (item.tipe === 'pengeluaran') keluarHariIni += (item.jumlah || 0);
                 });
             }
 
@@ -313,36 +319,38 @@
 
     function jalankanPantauLiveAdmin() {
         setInterval(function() {
-            // FIX BUG: Sinkronisasi tanggal dari input secara aman tanpa mereset otomatis
-            let inputKalender = document.getElementById('pilih_tanggal_admin').value;
-            if (inputKalender && tanggalAktifAdmin !== inputKalender) {
-                // Hanya mengizinkan sinkronisasi jika diubah manual dari filter tanggal
-            }
-
-            fetch(`${FIREBASE_URL}/${cabangAktif}/modal/${tanggalAktifAdmin}.json`).then(res => res.json()).then(m_nominal => {
+            // Fetch Uang Modal
+            fetch(`${FIREBASE_URL}/${cabangAktif}/modal/${tanggalAktifAdmin}.json`)
+            .then(res => res.json())
+            .then(m_nominal => {
                 modalHariIniGlobal = parseInt(m_nominal) || 0;
             });
 
-            fetch(`${FIREBASE_URL}/${cabangAktif}/transaksi/${tanggalAktifAdmin}.json`).then(res => res.json()).then(data => {
+            // Fetch Transaksi
+            fetch(`${FIREBASE_URL}/${cabangAktif}/transaksi/${tanggalAktifAdmin}.json`)
+            .then(res => res.json())
+            .then(data => {
                 let tabel = document.getElementById('adm_tabel');
                 let totalP = 0, totalK = 0;
                 dataGlobalTransaksiHarian = data;
 
                 if (!data) {
                     tabel.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">Tidak ada riwayat transaksi pada tanggal ini.</td></tr>';
-                    updateDashboard(0, 0); return;
+                    updateDashboard(0, 0); 
+                    return;
                 }
                 
                 tabel.innerHTML = '';
                 Object.entries(data).reverse().forEach(function([id, item]) {
-                    if (item.tipe === 'pemasukan') totalP += item.jumlah; else totalK += item.jumlah;
+                    let jml = item.jumlah || 0;
+                    if (item.tipe === 'pemasukan') totalP += jml; else totalK += jml;
                     tabel.insertAdjacentHTML('beforeend', `
                         <tr>
-                            <td>${item.waktu}</td>
-                            <td>${item.keterangan}</td>
-                            <td class="text-right ${item.tipe==='pemasukan'?'c-in':'c-out'}">${item.tipe==='pemasukan'?'+':'-'} Rp ${item.jumlah.toLocaleString('id-ID')}</td>
+                            <td>${item.waktu || '-'}</td>
+                            <td>${item.keterangan || '-'}</td>
+                            <td class="text-right ${item.tipe==='pemasukan'?'c-in':'c-out'}">${item.tipe==='pemasukan'?'+':'-'} Rp ${jml.toLocaleString('id-ID')}</td>
                             <td style="text-align:center; white-space: nowrap;">
-                                <button class="btn-edit" onclick="editTransaksi('${id}', '${item.keterangan}', ${item.jumlah})">Edit</button>
+                                <button class="btn-edit" onclick="editTransaksi('${id}', '${item.keterangan}', ${jml})">Edit</button>
                                 <button class="btn-hapus" onclick="hapusTransaksi('${id}', '${item.keterangan}')">Hapus</button>
                             </td>
                         </tr>
@@ -351,22 +359,37 @@
                 updateDashboard(totalP, totalK);
             });
 
-            fetch(`${FIREBASE_URL}/${cabangAktif}/closing/${tanggalAktifAdmin}.json`).then(res => res.json()).then(data => {
+            // Fetch Closing Notification
+            fetch(`${FIREBASE_URL}/${cabangAktif}/closing/${tanggalAktifAdmin}.json`)
+            .then(res => res.json())
+            .then(data => {
                 let boxNotif = document.getElementById('notif_closing_box');
                 if (data) {
                     boxNotif.style.display = 'block';
-                    document.getElementById('notif_closing_text').innerHTML = "Jam: " + data.waktu + " <br> <b>Catatan Pegawai:</b> " + data.catatan;
+                    document.getElementById('notif_closing_text').innerHTML = "Jam: " + (data.waktu || '-') + " <br> <b>Catatan Pegawai:</b> " + (data.catatan || '-');
                 } else { boxNotif.style.display = 'none'; }
             });
 
-            fetch(`${FIREBASE_URL}/${cabangAktif}/chat/${tanggalAktifAdmin}.json`).then(res => res.json()).then(data => {
-                let box = document.getElementById('admin_chat_box'); box.innerHTML = '';
+            // Fetch Chat Obrolan
+            fetch(`${FIREBASE_URL}/${cabangAktif}/chat/${tanggalAktifAdmin}.json`)
+            .then(res => res.json())
+            .then(data => {
+                let box = document.getElementById('admin_chat_box'); 
+                box.innerHTML = '';
                 if(data) {
                     Object.values(data).forEach(function(c) {
-                        box.insertAdjacentHTML('beforeend', '<div class="chat-line ' + (c.pengirim==='pegawai'?'pegawai':'me') + '"><b>' + (c.pengirim==='pegawai'?'Pegawai':'Anda') + ' [' + c.waktu + ']:</b> ' + c.teks + '</div>');
+                        let textMsg = c.teks || c.pesan || c.text || '';
+                        let isPegawai = c.pengirim === 'pegawai';
+                        box.insertAdjacentHTML('beforeend', `
+                            <div class="chat-line ${isPegawai ? 'pegawai' : 'me'}">
+                                <b>${isPegawai ? 'Pegawai' : 'Anda'} [${c.waktu || ''}]:</b> ${textMsg}
+                            </div>
+                        `);
                     });
                     box.scrollTop = box.scrollHeight;
-                } else { box.innerHTML = '<center style="color:#777; font-size:12px;">Tidak ada obrolan.</center>'; }
+                } else { 
+                    box.innerHTML = '<center style="color:#777; font-size:12px;">Tidak ada obrolan.</center>'; 
+                }
             });
         }, 3000);
     }
@@ -381,6 +404,7 @@
     }
 
     function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
+    
     jalankanPantauLiveAdmin();
 </script>
 </body>
